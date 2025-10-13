@@ -1,0 +1,185 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  MASTER_ADMIN
+}
+
+enum DifficultyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+model User {
+  id            String      @id @default(uuid())
+  name          String
+  email         String      @unique
+  passwordHash  String      @map("password_hash")
+  role          Role        @default(USER)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  
+  bookmarks     Bookmark[]
+  progress      Progress[]
+  quizAttempts  QuizAttempt[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  topics      Topic[]
+
+  @@map("products")
+}
+
+model Topic {
+  id          String   @id @default(uuid())
+  productId   String   @map("product_id")
+  name        String
+  description String?  @db.Text
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  qna         QnA[]
+  quizzes     Quiz[]
+  pdfs        PDF[]
+  progress    Progress[]
+
+  @@map("topics")
+}
+
+model QnA {
+  id           String          @id @default(uuid())
+  topicId      String          @map("topic_id")
+  question     String          @db.Text
+  answer       String          @db.Text
+  level        DifficultyLevel @default(BEGINNER)
+  companyTags  Json?           @map("company_tags") // ["Amazon", "Google"]
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  
+  topic        Topic           @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  bookmarks    Bookmark[]
+
+  @@index([topicId])
+  @@map("qna")
+}
+
+model Quiz {
+  id            String          @id @default(uuid())
+  topicId       String          @map("topic_id")
+  question      String          @db.Text
+  options       Json            // ["Option A", "Option B", "Option C", "Option D"]
+  correctAnswer String          @map("correct_answer")
+  explanation   String?         @db.Text
+  level         DifficultyLevel @default(BEGINNER)
+  companyTags   Json?           @map("company_tags")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  
+  topic         Topic           @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  attempts      QuizAttempt[]
+
+  @@index([topicId])
+  @@map("quizzes")
+}
+
+model PDF {
+  id          String     @id @default(uuid())
+  topicId     String     @map("topic_id")
+  title       String
+  description String?    @db.Text
+  fileUrl     String     @map("file_url")
+  fileSize    Int?       @map("file_size")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  
+  topic       Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  bookmarks   Bookmark[]
+
+  @@index([topicId])
+  @@map("pdfs")
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  qnaId     String?  @map("qna_id")
+  pdfId     String?  @map("pdf_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  qna       QnA?     @relation(fields: [qnaId], references: [id], onDelete: Cascade)
+  pdf       PDF?     @relation(fields: [pdfId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, qnaId])
+  @@unique([userId, pdfId])
+  @@map("bookmarks")
+}
+
+model Progress {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  topicId           String   @map("topic_id")
+  completionPercent Int      @default(0) @map("completion_percent")
+  score             Float?
+  lastAccessedAt    DateTime @default(now()) @map("last_accessed_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic             Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topicId])
+  @@map("progress")
+}
+
+model QuizAttempt {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  quizId         String   @map("quiz_id")
+  selectedAnswer String   @map("selected_answer")
+  isCorrect      Boolean  @map("is_correct")
+  timeTaken      Int?     @map("time_taken") // in seconds
+  createdAt      DateTime @default(now()) @map("created_at")
+  
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([userId, quizId])
+  @@map("quiz_attempts")
+}

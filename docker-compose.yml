@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: learning_api_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: learning_api
+      MYSQL_USER: apiuser
+      MYSQL_PASSWORD: apipassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - learning_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+
+  # API Server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: learning_api_server
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: mysql://apiuser:apipassword@mysql:3306/learning_api
+      JWT_SECRET: your-super-secret-jwt-key-change-this
+      JWT_ACCESS_EXPIRY: 15m
+      JWT_REFRESH_EXPIRY: 7d
+      MASTER_ADMIN_EMAIL: admin@example.com
+      MASTER_ADMIN_PASSWORD: SecurePassword123!
+      CORS_ORIGIN: http://localhost:3001,http://localhost:3000
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - learning_network
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed && node dist/index.js"
+
+volumes:
+  mysql_data:
+
+networks:
+  learning_network:
+    driver: bridge
