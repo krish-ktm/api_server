@@ -209,7 +209,7 @@ VALUES (
   UUID(),
   'Master Admin',
   'admin@example.com',
-  '$2b$10$YourHashedPasswordHere',
+  '$2y$10$3ctfNp./g4d92WaFA7lWHu/10GkuzZlpuIpqODo4.FysvTQz1QK3O',
   'MASTER_ADMIN',
   NOW(3),
   NOW(3)
@@ -244,7 +244,7 @@ VALUES
     'What is hoisting in JavaScript?',
     'Hoisting is JavaScript\'s default behavior of moving declarations to the top of the current scope. Variables declared with var and function declarations are hoisted to the top of their scope before code execution.',
     'INTERMEDIATE',
-    JSON_ARRAY('Amazon', 'Google', 'Microsoft'),
+    JSON_ARRAY('amazon', 'google', 'microsoft'),
     NOW(3),
     NOW(3)
   ),
@@ -254,7 +254,7 @@ VALUES
     'Explain the difference between let, const, and var',
     'var is function-scoped and hoisted. let and const are block-scoped and not hoisted. const cannot be reassigned after declaration, while let can be reassigned.',
     'BEGINNER',
-    JSON_ARRAY('TCS', 'Infosys', 'Wipro', 'Cognizant'),
+    JSON_ARRAY('tcs', 'infosys', 'wipro', 'cognizant'),
     NOW(3),
     NOW(3)
   ),
@@ -264,7 +264,7 @@ VALUES
     'What is a closure in JavaScript?',
     'A closure is a function that has access to variables in its outer (enclosing) lexical scope, even after the outer function has returned. Closures allow data privacy and factory functions.',
     'ADVANCED',
-    JSON_ARRAY('Google', 'Amazon', 'Facebook', 'Netflix'),
+    JSON_ARRAY('google', 'amazon', 'facebook', 'netflix'),
     NOW(3),
     NOW(3)
   ),
@@ -274,7 +274,7 @@ VALUES
     'What is the time complexity of binary search?',
     'Binary search has a time complexity of O(log n) as it divides the search space in half with each iteration. This makes it much more efficient than linear search O(n) for sorted arrays.',
     'INTERMEDIATE',
-    JSON_ARRAY('Amazon', 'Microsoft', 'Google'),
+    JSON_ARRAY('amazon', 'microsoft', 'google'),
     NOW(3),
     NOW(3)
   ),
@@ -284,7 +284,7 @@ VALUES
     'Explain the difference between Stack and Queue',
     'Stack follows LIFO (Last In First Out) principle - the last element added is the first to be removed. Queue follows FIFO (First In First Out) principle - the first element added is the first to be removed.',
     'BEGINNER',
-    JSON_ARRAY('TCS', 'Infosys', 'Accenture'),
+    JSON_ARRAY('tcs', 'infosys', 'accenture'),
     NOW(3),
     NOW(3)
   );
@@ -300,7 +300,7 @@ VALUES
     'Array',
     'Array is an object type, not a primitive. The primitive types in JavaScript are: string, number, boolean, null, undefined, symbol, and bigint.',
     'BEGINNER',
-    JSON_ARRAY('Amazon', 'Flipkart', 'Paytm'),
+    JSON_ARRAY('amazon', 'flipkart', 'paytm'),
     NOW(3),
     NOW(3)
   ),
@@ -312,7 +312,7 @@ VALUES
     'object',
     'This is a known JavaScript quirk. typeof null returns "object" due to a bug in the original JavaScript implementation that was never fixed for backward compatibility.',
     'INTERMEDIATE',
-    JSON_ARRAY('Google', 'Microsoft', 'Adobe'),
+    JSON_ARRAY('google', 'microsoft', 'adobe'),
     NOW(3),
     NOW(3)
   ),
@@ -324,7 +324,7 @@ VALUES
     'Stack',
     'A stack follows the LIFO principle where the last element added (pushed) is the first one to be removed (popped). Common operations are push, pop, and peek.',
     'BEGINNER',
-    JSON_ARRAY('TCS', 'Cognizant', 'Infosys', 'Wipro'),
+    JSON_ARRAY('tcs', 'cognizant', 'infosys', 'wipro'),
     NOW(3),
     NOW(3)
   ),
@@ -336,7 +336,7 @@ VALUES
     'O(log n)',
     'In a balanced BST, the height is log n, and search operations traverse from root to leaf, resulting in O(log n) time complexity. Worst case for unbalanced BST is O(n).',
     'INTERMEDIATE',
-    JSON_ARRAY('Amazon', 'Google', 'Microsoft', 'Apple'),
+    JSON_ARRAY('amazon', 'google', 'microsoft', 'apple'),
     NOW(3),
     NOW(3)
   );
