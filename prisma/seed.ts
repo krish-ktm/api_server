@@ -87,21 +87,21 @@ async function main() {
         question: 'What is hoisting in JavaScript?',
         answer: 'Hoisting is JavaScript\'s default behavior of moving declarations to the top of the current scope. Variables declared with var and function declarations are hoisted.',
         level: 'INTERMEDIATE',
-        companyTags: ['Amazon', 'Google', 'Microsoft']
+        companyTags: ['amazon', 'google', 'microsoft']
       },
       {
         topicId: jsTopic.id,
         question: 'Explain the difference between let, const, and var',
         answer: 'var is function-scoped and hoisted. let and const are block-scoped. const cannot be reassigned after declaration, while let can be.',
         level: 'BEGINNER',
-        companyTags: ['TCS', 'Infosys', 'Wipro']
+        companyTags: ['tcs', 'infosys', 'wipro']
       },
       {
         topicId: dsTopic.id,
         question: 'What is the time complexity of binary search?',
         answer: 'Binary search has a time complexity of O(log n) as it divides the search space in half with each iteration.',
         level: 'INTERMEDIATE',
-        companyTags: ['Amazon', 'Microsoft', 'Google']
+        companyTags: ['amazon', 'microsoft', 'google']
       }
     ],
     skipDuplicates: true
@@ -119,7 +119,7 @@ async function main() {
         correctAnswer: 'Array',
         explanation: 'Array is an object type, not a primitive. The primitive types are: string, number, boolean, null, undefined, symbol, and bigint.',
         level: 'BEGINNER',
-        companyTags: ['Amazon', 'Flipkart']
+        companyTags: ['amazon', 'flipkart']
       },
       {
         topicId: jsTopic.id,
@@ -128,7 +128,7 @@ async function main() {
         correctAnswer: 'object',
         explanation: 'This is a known JavaScript quirk. typeof null returns "object" due to a bug in the original JavaScript implementation.',
         level: 'INTERMEDIATE',
-        companyTags: ['Google', 'Microsoft']
+        companyTags: ['google', 'microsoft']
       },
       {
         topicId: dsTopic.id,
@@ -137,7 +137,7 @@ async function main() {
         correctAnswer: 'Stack',
         explanation: 'A stack follows LIFO principle where the last element added is the first one to be removed.',
         level: 'BEGINNER',
-        companyTags: ['TCS', 'Cognizant', 'Infosys']
+        companyTags: ['tcs', 'cognizant', 'infosys']
       }
     ],
     skipDuplicates: true

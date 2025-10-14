@@ -334,9 +334,19 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/qna",
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/qna?page=1&limit=5",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "products", "{{productId}}", "qna"]
+              "path": ["api", "v1", "products", "{{productId}}", "qna"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
             }
           },
           "event": [
@@ -347,6 +357,7 @@
                   "pm.test('Q&A retrieved', function () {",
                   "    pm.response.to.have.status(200);",
                   "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('pagination');",
                   "    if (jsonData.data.length > 0) {",
                   "        pm.collectionVariables.set('qnaId', jsonData.data[0].id);",
                   "    }",
@@ -362,13 +373,21 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/qna?company=amazon",
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/qna?company=amazon&page=1&limit=5",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "products", "{{productId}}", "qna"],
               "query": [
                 {
                   "key": "company",
                   "value": "amazon"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
                 }
               ]
             }

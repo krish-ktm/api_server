@@ -3,6 +3,7 @@
 import { Router } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { authenticate, authorize } from '../middleware/auth';
+import { asyncHandler } from '../middleware/errorHandler';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -12,160 +13,95 @@ const prisma = new PrismaClient();
  * @desc    Get all products
  * @access  Public
  */
-router.get('/', async (req, res) => {
-  try {
-    const products = await prisma.product.findMany({
-      where: { isActive: true },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        description: true,
-        createdAt: true
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+router.get('/', asyncHandler(async (req, res) => {
+  const products = await prisma.product.findMany({
+    where: { isActive: true },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      createdAt: true
+    },
+    orderBy: { createdAt: 'desc' }
+  });
 
-    res.json({
-      success: true,
-      data: products
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-});
+  res.json({
+    success: true,
+    data: products
+  });
+}));
 
 /**
  * @route   GET /api/v1/products/:productId/topics
  * @desc    Get all topics for a product
  * @access  Public
  */
-router.get('/:productId/topics', async (req, res) => {
-  try {
-    const { productId } = req.params;
+router.get('/:productId/topics', asyncHandler(async (req, res) => {
+  const { productId } = req.params;
 
-    const topics = await prisma.topic.findMany({
-      where: { productId },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        order: true,
-        _count: {
-          select: {
-            qna: true,
-            quizzes: true,
-            pdfs: true
-          }
+  const topics = await prisma.topic.findMany({
+    where: { productId },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      order: true,
+      _count: {
+        select: {
+          qna: true,
+          quizzes: true,
+          pdfs: true
         }
-      },
-      orderBy: { order: 'asc' }
-    });
+      }
+    },
+    orderBy: { order: 'asc' }
+  });
 
-    res.json({
-      success: true,
-      data: topics
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-});
+  res.json({
+    success: true,
+    data: topics
+  });
+}));
 
 /**
  * @route   GET /api/v1/products/:productId/qna
  * @desc    Get Q&A for a product (with optional company filter)
  * @access  Private
- * @query   ?company=amazon&topic=topicId&level=intermediate
+ * @query   ?company=amazon&topic=topicId&level=intermediate&page=1&limit=10
  */
-router.get('/:productId/qna', authenticate, async (req, res) => {
-  try {
-    const { productId } = req.params;
-    const { company, topic, level } = req.query;
+router.get('/:productId/qna', authenticate, asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+  const { company, topic, level, page = '1', limit = '10' } = req.query;
 
-    // Build where clause
-    const where: any = {
-      topic: {
-        productId
-      }
-    };
+  const pageNum = parseInt(page as string, 10);
+  const limitNum = parseInt(limit as string, 10);
+  const skip = (pageNum - 1) * limitNum;
 
-    if (topic) {
-      where.topicId = topic as string;
+  // Build where clause
+  const where: any = {
+    topic: {
+      productId
     }
+  };
 
-    if (level) {
-      where.level = level as string;
-    }
-
-    // Get all Q&A first
-    let qnaList = await prisma.qnA.findMany({
-      where,
-      include: {
-        topic: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    // Filter by company if specified
-    if (company) {
-      const companyLower = (company as string).toLowerCase();
-      qnaList = qnaList.filter(qna => {
-        if (!qna.companyTags) return false;
-        const tags = qna.companyTags as string[];
-        return tags.some(tag => tag.toLowerCase() === companyLower);
-      });
-    }
-
-    res.json({
-      success: true,
-      data: qnaList,
-      count: qnaList.length
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
+  if (topic) {
+    where.topicId = topic as string;
   }
-});
 
-/**
- * @route   GET /api/v1/products/:productId/quizzes
- * @desc    Get quizzes for a product (with optional company filter)
- * @access  Private
- * @query   ?company=google&topic=topicId&level=advanced&limit=10
- */
-router.get('/:productId/quizzes', authenticate, async (req, res) => {
-  try {
-    const { productId } = req.params;
-    const { company, topic, level, limit } = req.query;
+  if (level) {
+    where.level = level as string;
+  }
 
-    const where: any = {
-      topic: {
-        productId
-      }
+  if (company) {
+    const companyLower = (company as string).toLowerCase();
+    where.companyTags = {
+      array_contains: companyLower
     };
+  }
 
-    if (topic) {
-      where.topicId = topic as string;
-    }
-
-    if (level) {
-      where.level = level as string;
-    }
-
-    let quizzes = await prisma.quiz.findMany({
+  const [qnaList, total] = await prisma.$transaction([
+    prisma.qnA.findMany({
       where,
       include: {
         topic: {
@@ -176,139 +112,169 @@ router.get('/:productId/quizzes', authenticate, async (req, res) => {
         }
       },
       orderBy: { createdAt: 'desc' },
-      take: limit ? parseInt(limit as string) : undefined
-    });
+      skip,
+      take: limitNum
+    }),
+    prisma.qnA.count({ where })
+  ]);
 
-    // Filter by company if specified
-    if (company) {
-      const companyLower = (company as string).toLowerCase();
-      quizzes = quizzes.filter(quiz => {
-        if (!quiz.companyTags) return false;
-        const tags = quiz.companyTags as string[];
-        return tags.some(tag => tag.toLowerCase() === companyLower);
-      });
+  res.json({
+    success: true,
+    data: qnaList,
+    pagination: {
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum)
     }
+  });
+}));
 
-    // Don't send correct answers to frontend
-    const sanitizedQuizzes = quizzes.map(quiz => ({
-      id: quiz.id,
-      topicId: quiz.topicId,
-      question: quiz.question,
-      options: quiz.options,
-      level: quiz.level,
-      companyTags: quiz.companyTags,
-      topic: quiz.topic
-    }));
+/**
+ * @route   GET /api/v1/products/:productId/quizzes
+ * @desc    Get quizzes for a product (with optional company filter)
+ * @access  Private
+ * @query   ?company=google&topic=topicId&level=advanced&limit=10
+ */
+router.get('/:productId/quizzes', authenticate, asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+  const { company, topic, level, limit } = req.query;
 
-    res.json({
-      success: true,
-      data: sanitizedQuizzes,
-      count: sanitizedQuizzes.length
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
+  const where: any = {
+    topic: {
+      productId
+    }
+  };
+
+  if (topic) {
+    where.topicId = topic as string;
   }
-});
+
+  if (level) {
+    where.level = level as string;
+  }
+
+  if (company) {
+    const companyLower = (company as string).toLowerCase();
+    where.companyTags = {
+      array_contains: companyLower
+    };
+  }
+
+  let quizzes = await prisma.quiz.findMany({
+    where,
+    include: {
+      topic: {
+        select: {
+          id: true,
+          name: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' },
+    take: limit ? parseInt(limit as string) : undefined
+  });
+
+  // Don't send correct answers to frontend
+  const sanitizedQuizzes = quizzes.map(quiz => ({
+    id: quiz.id,
+    topicId: quiz.topicId,
+    question: quiz.question,
+    options: quiz.options,
+    level: quiz.level,
+    companyTags: quiz.companyTags,
+    topic: quiz.topic
+  }));
+
+  res.json({
+    success: true,
+    data: sanitizedQuizzes,
+    count: sanitizedQuizzes.length
+  });
+}));
 
 /**
  * @route   POST /api/v1/products/:productId/quizzes/:quizId/submit
  * @desc    Submit quiz answer
  * @access  Private
  */
-router.post('/:productId/quizzes/:quizId/submit', authenticate, async (req, res) => {
-  try {
-    const { quizId } = req.params;
-    const { selectedAnswer, timeTaken } = req.body;
-    const userId = req.user!.userId;
+router.post('/:productId/quizzes/:quizId/submit', authenticate, asyncHandler(async (req, res) => {
+  const { quizId } = req.params;
+  const { selectedAnswer, timeTaken } = req.body;
+  const userId = req.user!.userId;
 
-    // Get quiz
-    const quiz = await prisma.quiz.findUnique({
-      where: { id: quizId }
-    });
+  // Get quiz
+  const quiz = await prisma.quiz.findUnique({
+    where: { id: quizId }
+  });
 
-    if (!quiz) {
-      return res.status(404).json({
-        success: false,
-        message: 'Quiz not found'
-      });
-    }
-
-    // Check answer
-    const isCorrect = quiz.correctAnswer === selectedAnswer;
-
-    // Save attempt
-    await prisma.quizAttempt.create({
-      data: {
-        userId,
-        quizId,
-        selectedAnswer,
-        isCorrect,
-        timeTaken: timeTaken || null
-      }
-    });
-
-    res.json({
-      success: true,
-      data: {
-        isCorrect,
-        correctAnswer: quiz.correctAnswer,
-        explanation: quiz.explanation
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
+  if (!quiz) {
+    return res.status(404).json({
       success: false,
-      message: 'Server error'
+      message: 'Quiz not found'
     });
   }
-});
+
+  // Check answer
+  const isCorrect = quiz.correctAnswer === selectedAnswer;
+
+  // Save attempt
+  await prisma.quizAttempt.create({
+    data: {
+      userId,
+      quizId,
+      selectedAnswer,
+      isCorrect,
+      timeTaken: timeTaken || null
+    }
+  });
+
+  res.json({
+    success: true,
+    data: {
+      isCorrect,
+      correctAnswer: quiz.correctAnswer,
+      explanation: quiz.explanation
+    }
+  });
+}));
 
 /**
  * @route   GET /api/v1/products/:productId/pdfs
  * @desc    Get PDFs for a product
  * @access  Private
  */
-router.get('/:productId/pdfs', authenticate, async (req, res) => {
-  try {
-    const { productId } = req.params;
-    const { topic } = req.query;
+router.get('/:productId/pdfs', authenticate, asyncHandler(async (req, res) => {
+  const { productId } = req.params;
+  const { topic } = req.query;
 
-    const where: any = {
-      topic: {
-        productId
-      }
-    };
-
-    if (topic) {
-      where.topicId = topic as string;
+  const where: any = {
+    topic: {
+      productId
     }
+  };
 
-    const pdfs = await prisma.pDF.findMany({
-      where,
-      include: {
-        topic: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    res.json({
-      success: true,
-      data: pdfs
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
+  if (topic) {
+    where.topicId = topic as string;
   }
-});
+
+  const pdfs = await prisma.pDF.findMany({
+    where,
+    include: {
+      topic: {
+        select: {
+          id: true,
+          name: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  res.json({
+    success: true,
+    data: pdfs
+  });
+}));
 
 export default router;

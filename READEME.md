@@ -144,7 +144,7 @@ docker run -p 3000:3000 \
 |--------|----------|-------------|--------|
 | GET | `/` | List products | Public |
 | GET | `/:productId/topics` | Get topics | Public |
-| GET | `/:productId/qna` | Get Q&A | Private |
+| GET | `/:productId/qna` | Get Q&A (paginated) | Private |
 | GET | `/:productId/quizzes` | Get quizzes | Private |
 | POST | `/:productId/quizzes/:quizId/submit` | Submit answer | Private |
 | GET | `/:productId/pdfs` | Get PDFs | Private |
@@ -153,7 +153,8 @@ docker run -p 3000:3000 \
 - `?company=amazon` - Filter by company tag
 - `?topic=topicId` - Filter by topic
 - `?level=intermediate` - Filter by difficulty
-- `?limit=10` - Limit results
+- `?page=1` - Page number for pagination
+- `?limit=10` - Number of items per page
 
 ### Admin (`/api/v1/admin`)
 
@@ -209,8 +210,8 @@ curl -X POST http://localhost:3000/api/v1/auth/refresh \
 ### Get Q&A by Company
 
 ```bash
-# Get Amazon interview questions
-GET /api/v1/products/interview-prep-id/qna?company=amazon&level=intermediate
+# Get Amazon interview questions (page 2, 5 items per page)
+GET /api/v1/products/interview-prep-id/qna?company=amazon&level=intermediate&page=2&limit=5
 ```
 
 ### Submit Quiz Answer
