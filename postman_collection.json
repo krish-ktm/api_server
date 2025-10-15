@@ -54,6 +54,11 @@
       "key": "quizId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "bookmarkId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -269,9 +274,6 @@
         {
           "name": "Get All Products",
           "request": {
-            "auth": {
-              "type": "noauth"
-            },
             "method": "GET",
             "header": [],
             "url": {
@@ -300,9 +302,6 @@
         {
           "name": "Get Product Topics",
           "request": {
-            "auth": {
-              "type": "noauth"
-            },
             "method": "GET",
             "header": [],
             "url": {
@@ -547,7 +546,23 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "bookmarks"]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Bookmarks retrieved', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data.length > 0) {",
+                  "        pm.collectionVariables.set('bookmarkId', jsonData.data[0].id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Add Bookmark",
@@ -567,6 +582,18 @@
               "raw": "{{baseUrl}}/api/v1/users/bookmarks",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "bookmarks"]
+            }
+          }
+        },
+        {
+          "name": "Delete Bookmark",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/bookmarks/{{bookmarkId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "bookmarks", "{{bookmarkId}}"]
             }
           }
         }

@@ -119,35 +119,35 @@ docker run -p 3000:3000 \
 ### Authentication (`/api/v1/auth`)
 
 | Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| POST | `/register` | Register new user | Public |
-| POST | `/login` | Login user | Public |
-| POST | `/refresh` | Refresh access token | Public |
-| POST | `/logout` | Logout user | Private |
+|---|---|---|---|
+| POST | `/api/v1/auth/register` | Register new user | Public |
+| POST | `/api/v1/auth/login` | Login user | Public |
+| POST | `/api/v1/auth/refresh` | Refresh access token | Public |
+| POST | `/api/v1/auth/logout` | Logout user | Private |
 
 ### Users (`/api/v1/users`)
 
 | Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET | `/profile` | Get user profile | Private |
-| PUT | `/profile` | Update profile | Private |
-| GET | `/bookmarks` | Get bookmarks | Private |
-| POST | `/bookmarks` | Add bookmark | Private |
-| DELETE | `/bookmarks/:id` | Remove bookmark | Private |
-| GET | `/progress` | Get progress | Private |
-| POST | `/progress` | Update progress | Private |
-| GET | `/stats` | Get user stats | Private |
+|---|---|---|---|
+| GET | `/api/v1/users/profile` | Get user profile | Private |
+| PUT | `/api/v1/users/profile` | Update profile | Private |
+| GET | `/api/v1/users/bookmarks` | Get bookmarks | Private |
+| POST | `/api/v1/users/bookmarks` | Add bookmark | Private |
+| DELETE | `/api/v1/users/bookmarks/:bookmarkId` | Remove bookmark | Private |
+| GET | `/api/v1/users/progress` | Get progress | Private |
+| POST | `/api/v1/users/progress` | Update progress | Private |
+| GET | `/api/v1/users/stats` | Get user stats | Private |
 
 ### Products (`/api/v1/products`)
 
 | Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET | `/` | List products | Public |
-| GET | `/:productId/topics` | Get topics | Public |
-| GET | `/:productId/qna` | Get Q&A (paginated) | Private |
-| GET | `/:productId/quizzes` | Get quizzes | Private |
-| POST | `/:productId/quizzes/:quizId/submit` | Submit answer | Private |
-| GET | `/:productId/pdfs` | Get PDFs | Private |
+|---|---|---|---|
+| GET | `/api/v1/products/` | List products | Public |
+| GET | `/api/v1/products/:productId/topics` | Get topics | Public |
+| GET | `/api/v1/products/:productId/qna` | Get Q&A (paginated) | Private |
+| GET | `/api/v1/products/:productId/quizzes` | Get quizzes | Private |
+| POST | `/api/v1/products/:productId/quizzes/:quizId/submit` | Submit answer | Private |
+| GET | `/api/v1/products/:productId/pdfs` | Get PDFs | Private |
 
 **Query Parameters for Filtering:**
 - `?company=amazon` - Filter by company tag
@@ -159,13 +159,15 @@ docker run -p 3000:3000 \
 ### Admin (`/api/v1/admin`)
 
 | Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET/POST/PUT/DELETE | `/products` | Manage products | Master Admin |
-| GET/POST/PUT/DELETE | `/topics` | Manage topics | Admin+ |
-| GET/POST/PUT/DELETE | `/qna` | Manage Q&A | Admin+ |
-| GET/POST/PUT/DELETE | `/quizzes` | Manage quizzes | Admin+ |
-| GET/POST/PUT/DELETE | `/pdfs` | Manage PDFs | Admin+ |
-| GET | `/analytics` | View analytics | Master Admin |
+|---|---|---|---|
+| POST | `/api/v1/admin/users/grant-product-access` | Grant a user access to a product. | Admin, Master Admin |
+| POST | `/api/v1/admin/users/revoke-product-access` | Revoke a user's access to a product. | Admin, Master Admin |
+| GET/POST/PUT/DELETE | `/api/v1/admin/products` | Manage products | Master Admin |
+| GET/POST/PUT/DELETE | `/api/v1/admin/topics` | Manage topics | Admin+ |
+| GET/POST/PUT/DELETE | `/api/v1/admin/qna` | Manage Q&A | Admin+ |
+| GET/POST/PUT/DELETE | `/api/v1/admin/quizzes` | Manage quizzes | Admin+ |
+| GET/POST/PUT/DELETE | `/api/v1/admin/pdfs` | Manage PDFs | Admin+ |
+| GET | `/api/v1/admin/analytics` | View analytics | Master Admin |
 
 ## 🔑 Authentication Flow
 
@@ -319,7 +321,7 @@ npm run test:api
 ## 📝 Scripts
 
 | Script | Description |
-|--------|-------------|
+|---|---|
 | `npm run dev` | Start development server |
 | `npm run build` | Build for production |
 | `npm start` | Start production server |
