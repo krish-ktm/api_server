@@ -571,6 +571,53 @@
           }
         }
       ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Grant Product Access",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"productId\": \"{{productId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users/grant-product-access",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "users", "grant-product-access"]
+            }
+          }
+        },
+        {
+          "name": "Revoke Product Access",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"productId\": \"{{productId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users/revoke-product-access",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "users", "revoke-product-access"]
+            }
+          }
+        }
+      ]
     }
   ]
 }

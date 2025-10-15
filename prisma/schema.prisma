@@ -34,8 +34,21 @@ model User {
   progress      Progress[]
   quizAttempts  QuizAttempt[]
   refreshTokens RefreshToken[]
+  userProducts  UserProduct[]
 
   @@map("users")
+}
+
+model UserProduct {
+  userId     String   @map("user_id")
+  productId  String   @map("product_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productId])
+  @@map("user_products")
 }
 
 model RefreshToken {
@@ -60,6 +73,7 @@ model Product {
   updatedAt   DateTime @updatedAt @map("updated_at")
   
   topics      Topic[]
+  userAccess  UserProduct[]
 
   @@map("products")
 }
