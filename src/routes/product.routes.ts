@@ -1,6 +1,6 @@
 // src/routes/product.routes.ts
 
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { PrismaClient, Role } from '@prisma/client';
 import { authenticate } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
@@ -13,7 +13,7 @@ const prisma = new PrismaClient();
  * @desc    Get all products a user has access to, or all products for admins
  * @access  Private
  */
-router.get('/', authenticate, asyncHandler(async (req, res) => {
+router.get('/', authenticate, asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const userId = req.user!.userId;
   const userRole = req.user!.role;
 
@@ -67,7 +67,7 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
  * @desc    Get all topics for a product
  * @access  Private
  */
-router.get('/:productId/topics', authenticate, asyncHandler(async (req, res) => {
+router.get('/:productId/topics', authenticate, asyncHandler(async (req: Request, res: Response): Promise<any> => {
   const { productId } = req.params;
   const userId = req.user!.userId;
   const userRole = req.user!.role;
@@ -133,8 +133,296 @@ router.get('/:productId/topics', authenticate, asyncHandler(async (req, res) => 
   });
 }));
 
-// ... (keep other routes like qna, quizzes, pdfs the same,
-// as they already require authentication and will now be
-// implicitly protected by the product access check on topics)
+/**
+ * @route   GET /api/v1/products/:productId/qna
+ * @desc    Get Q&A for a product with filtering and pagination
+ * @access  Private
+ */
+router.get('/:productId/qna', authenticate, asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  const { productId } = req.params;
+  const userId = req.user!.userId;
+  const userRole = req.user!.role;
+
+  const { company, topic, level, page = '1', limit = '10' } = req.query;
+  const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+  const take = parseInt(limit as string);
+
+  if (userRole !== Role.ADMIN && userRole !== Role.MASTER_ADMIN) {
+    const hasAccess = await prisma.userProduct.findUnique({
+      where: { userId_productId: { userId, productId } }
+    });
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access to this product is denied'
+      });
+    }
+  }
+
+  const whereClause: any = {
+    topic: { productId }
+  };
+
+  if (topic) {
+    whereClause.topicId = topic as string;
+  }
+
+  if (level) {
+    whereClause.level = (level as string).toUpperCase();
+  }
+
+  if (company) {
+    whereClause.companyTags = {
+      path: '$',
+      array_contains: company
+    };
+  }
+
+  const [qnaList, total] = await Promise.all([
+    prisma.qnA.findMany({
+      where: whereClause,
+      include: {
+        topic: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      },
+      skip,
+      take,
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.qnA.count({ where: whereClause })
+  ]);
+
+  res.json({
+    success: true,
+    data: {
+      qna: qnaList,
+      pagination: {
+        page: parseInt(page as string),
+        limit: parseInt(limit as string),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit as string))
+      }
+    }
+  });
+}));
+
+/**
+ * @route   GET /api/v1/products/:productId/quizzes
+ * @desc    Get quizzes for a product with filtering
+ * @access  Private
+ */
+router.get('/:productId/quizzes', authenticate, asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  const { productId } = req.params;
+  const userId = req.user!.userId;
+  const userRole = req.user!.role;
+
+  const { company, topic, level } = req.query;
+
+  if (userRole !== Role.ADMIN && userRole !== Role.MASTER_ADMIN) {
+    const hasAccess = await prisma.userProduct.findUnique({
+      where: { userId_productId: { userId, productId } }
+    });
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access to this product is denied'
+      });
+    }
+  }
+
+  const whereClause: any = {
+    topic: { productId }
+  };
+
+  if (topic) {
+    whereClause.topicId = topic as string;
+  }
+
+  if (level) {
+    whereClause.level = (level as string).toUpperCase();
+  }
+
+  if (company) {
+    whereClause.companyTags = {
+      path: '$',
+      array_contains: company
+    };
+  }
+
+  const quizzes = await prisma.quiz.findMany({
+    where: whereClause,
+    include: {
+      topic: {
+        select: {
+          id: true,
+          name: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  const quizzesWithAttempts = await Promise.all(
+    quizzes.map(async (quiz) => {
+      const userAttempts = await prisma.quizAttempt.findMany({
+        where: {
+          quizId: quiz.id,
+          userId
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 1
+      });
+
+      return {
+        ...quiz,
+        correctAnswer: undefined,
+        userAttempted: userAttempts.length > 0,
+        lastAttempt: userAttempts[0] || null
+      };
+    })
+  );
+
+  res.json({
+    success: true,
+    data: quizzesWithAttempts
+  });
+}));
+
+/**
+ * @route   POST /api/v1/products/:productId/quizzes/:quizId/submit
+ * @desc    Submit quiz answer
+ * @access  Private
+ */
+router.post('/:productId/quizzes/:quizId/submit', authenticate, asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  const { productId, quizId } = req.params;
+  const userId = req.user!.userId;
+  const userRole = req.user!.role;
+  const { selectedAnswer, timeTaken } = req.body;
+
+  if (!selectedAnswer) {
+    return res.status(400).json({
+      success: false,
+      message: 'Selected answer is required'
+    });
+  }
+
+  if (userRole !== Role.ADMIN && userRole !== Role.MASTER_ADMIN) {
+    const hasAccess = await prisma.userProduct.findUnique({
+      where: { userId_productId: { userId, productId } }
+    });
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access to this product is denied'
+      });
+    }
+  }
+
+  const quiz = await prisma.quiz.findUnique({
+    where: { id: quizId },
+    include: {
+      topic: {
+        select: {
+          productId: true
+        }
+      }
+    }
+  });
+
+  if (!quiz) {
+    return res.status(404).json({
+      success: false,
+      message: 'Quiz not found'
+    });
+  }
+
+  if (quiz.topic.productId !== productId) {
+    return res.status(400).json({
+      success: false,
+      message: 'Quiz does not belong to this product'
+    });
+  }
+
+  const isCorrect = selectedAnswer === quiz.correctAnswer;
+
+  const attempt = await prisma.quizAttempt.create({
+    data: {
+      userId,
+      quizId,
+      selectedAnswer,
+      isCorrect,
+      timeTaken: timeTaken || null
+    }
+  });
+
+  res.json({
+    success: true,
+    message: isCorrect ? 'Correct answer!' : 'Incorrect answer',
+    data: {
+      isCorrect,
+      correctAnswer: quiz.correctAnswer,
+      explanation: quiz.explanation,
+      attempt
+    }
+  });
+}));
+
+/**
+ * @route   GET /api/v1/products/:productId/pdfs
+ * @desc    Get PDFs for a product
+ * @access  Private
+ */
+router.get('/:productId/pdfs', authenticate, asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  const { productId } = req.params;
+  const userId = req.user!.userId;
+  const userRole = req.user!.role;
+  const { topic } = req.query;
+
+  if (userRole !== Role.ADMIN && userRole !== Role.MASTER_ADMIN) {
+    const hasAccess = await prisma.userProduct.findUnique({
+      where: { userId_productId: { userId, productId } }
+    });
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access to this product is denied'
+      });
+    }
+  }
+
+  const whereClause: any = {
+    topic: { productId }
+  };
+
+  if (topic) {
+    whereClause.topicId = topic as string;
+  }
+
+  const pdfs = await prisma.pDF.findMany({
+    where: whereClause,
+    include: {
+      topic: {
+        select: {
+          id: true,
+          name: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  res.json({
+    success: true,
+    data: pdfs
+  });
+}));
 
 export default router;

@@ -23,19 +23,19 @@ const loginSchema = z.object({
 });
 
 // Generate tokens
-const generateAccessToken = (userId: string, email: string, role: string) => {
+const generateAccessToken = (userId: string, email: string, role: string): string => {
   return jwt.sign(
     { userId, email, role },
     process.env.JWT_SECRET!,
-    { expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m' }
+    { expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m' } as jwt.SignOptions
   );
 };
 
-const generateRefreshToken = (userId: string) => {
+const generateRefreshToken = (userId: string): string => {
   return jwt.sign(
     { userId },
     process.env.JWT_SECRET!,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' }
+    { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' } as jwt.SignOptions
   );
 };
 
@@ -44,7 +44,7 @@ const generateRefreshToken = (userId: string) => {
  * @desc    Register a new user
  * @access  Public
  */
-router.post('/register', async (req, res) => {
+router.post('/register', async (req, res): Promise<any> => {
   try {
     const { name, email, password } = registerSchema.parse(req.body);
 
@@ -122,7 +122,7 @@ router.post('/register', async (req, res) => {
  * @desc    Login user
  * @access  Public
  */
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res): Promise<any> => {
   try {
     const { email, password } = loginSchema.parse(req.body);
 
@@ -196,7 +196,7 @@ router.post('/login', async (req, res) => {
  * @desc    Refresh access token
  * @access  Public
  */
-router.post('/refresh', async (req, res) => {
+router.post('/refresh', async (req, res): Promise<any> => {
   try {
     const { refreshToken } = req.body;
 
@@ -208,7 +208,7 @@ router.post('/refresh', async (req, res) => {
     }
 
     // Verify refresh token
-    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET!) as { userId: string };
+    jwt.verify(refreshToken, process.env.JWT_SECRET!) as { userId: string };
 
     // Check if token exists in database
     const storedToken = await prisma.refreshToken.findUnique({

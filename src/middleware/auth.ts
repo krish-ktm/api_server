@@ -22,7 +22,7 @@ export const authenticate = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<any> => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -54,7 +54,7 @@ export const authenticate = async (
 };
 
 export const authorize = (...allowedRoles: Role[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): any => {
     if (!req.user) {
       return res.status(401).json({
         success: false,
