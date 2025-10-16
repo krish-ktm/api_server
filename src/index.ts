@@ -13,6 +13,8 @@ import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import productRoutes from './routes/product.routes';
 import adminRoutes from './routes/admin.routes';
+import adminBatchRoutes from './routes/admin.batch.routes';
+import userBatchRoutes from './routes/user.batch.routes';
 
 // Load environment variables
 dotenv.config();
@@ -116,8 +118,10 @@ app.get('/health', (_req, res) => {
 // API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/users', userBatchRoutes);
 app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/admin', adminBatchRoutes);
 
 // ============= ERROR HANDLING =============
 
