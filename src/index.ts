@@ -93,7 +93,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ============= ROUTES =============
 
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.json({
     success: true,
     message: 'Multi-Product Learning API',
@@ -105,7 +105,7 @@ app.get('/', (req, res) => {
   });
 });
 
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({
     success: true,
     status: 'healthy',

@@ -126,7 +126,7 @@ router.get('/bookmarks', authenticate, async (req, res) => {
  * @desc    Add bookmark
  * @access  Private
  */
-router.post('/bookmarks', authenticate, async (req, res) => {
+router.post('/bookmarks', authenticate, async (req, res): Promise<any> => {
   try {
     const userId = req.user!.userId;
     const { qnaId, pdfId } = req.body;
