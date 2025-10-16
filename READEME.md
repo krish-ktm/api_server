@@ -11,7 +11,7 @@ A scalable, database-independent API server for multiple learning products with 
 - **📊 Progress Tracking**: Track user quiz attempts and topic progress
 - **🔖 Bookmarks**: Save Q&A and PDFs for quick access
 - **📈 Analytics Dashboard**: Admin analytics for usage insights
-- **🗄️ Database Flexibility**: Easy switching between MySQL, PostgreSQL, MongoDB
+- **🗄️ Database**: MySQL with Prisma ORM
 - **📖 API Documentation**: Auto-generated Swagger docs
 - **🐳 Docker Ready**: Containerized deployment
 
@@ -59,8 +59,12 @@ nano .env
 ```env
 DATABASE_URL="mysql://username:password@localhost:3306/learning_api"
 JWT_SECRET="your-super-secret-jwt-key"
-MASTER_ADMIN_EMAIL="admin@example.com"
-MASTER_ADMIN_PASSWORD="SecurePassword123!"
+JWT_ACCESS_EXPIRY="15m"
+JWT_REFRESH_EXPIRY="7d"
+PORT="3000"
+CORS_ORIGIN="*"
+RATE_LIMIT_WINDOW_MS="900000"
+RATE_LIMIT_MAX_REQUESTS="100"
 ```
 
 ### 3. Database Setup
@@ -142,8 +146,8 @@ docker run -p 3000:3000 \
 
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
-| GET | `/api/v1/products/` | List products | Public |
-| GET | `/api/v1/products/:productId/topics` | Get topics | Public |
+| GET | `/api/v1/products/` | List accessible products | Private |
+| GET | `/api/v1/products/:productId/topics` | Get topics | Private |
 | GET | `/api/v1/products/:productId/qna` | Get Q&A (paginated) | Private |
 | GET | `/api/v1/products/:productId/quizzes` | Get quizzes | Private |
 | POST | `/api/v1/products/:productId/quizzes/:quizId/submit` | Submit answer | Private |
@@ -158,16 +162,56 @@ docker run -p 3000:3000 \
 
 ### Admin (`/api/v1/admin`)
 
+#### User-Product Access
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
-| POST | `/api/v1/admin/users/grant-product-access` | Grant a user access to a product. | Admin, Master Admin |
-| POST | `/api/v1/admin/users/revoke-product-access` | Revoke a user's access to a product. | Admin, Master Admin |
-| GET/POST/PUT/DELETE | `/api/v1/admin/products` | Manage products | Master Admin |
-| GET/POST/PUT/DELETE | `/api/v1/admin/topics` | Manage topics | Admin+ |
-| GET/POST/PUT/DELETE | `/api/v1/admin/qna` | Manage Q&A | Admin+ |
-| GET/POST/PUT/DELETE | `/api/v1/admin/quizzes` | Manage quizzes | Admin+ |
-| GET/POST/PUT/DELETE | `/api/v1/admin/pdfs` | Manage PDFs | Admin+ |
-| GET | `/api/v1/admin/analytics` | View analytics | Master Admin |
+| POST | `/api/v1/admin/users/grant-product-access` | Grant product access | Admin, Master Admin |
+| POST | `/api/v1/admin/users/revoke-product-access` | Revoke product access | Admin, Master Admin |
+
+#### Products
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/api/v1/admin/products` | List all products | Master Admin |
+| POST | `/api/v1/admin/products` | Create product | Master Admin |
+| PUT | `/api/v1/admin/products/:id` | Update product | Master Admin |
+| DELETE | `/api/v1/admin/products/:id` | Delete product | Master Admin |
+
+#### Topics
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/api/v1/admin/topics?productId=<id>` | List topics | Admin, Master Admin |
+| POST | `/api/v1/admin/topics` | Create topic | Admin, Master Admin |
+| PUT | `/api/v1/admin/topics/:id` | Update topic | Admin, Master Admin |
+| DELETE | `/api/v1/admin/topics/:id` | Delete topic | Admin, Master Admin |
+
+#### Q&A
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/api/v1/admin/qna?topicId=<id>` | List Q&A | Admin, Master Admin |
+| POST | `/api/v1/admin/qna` | Create Q&A | Admin, Master Admin |
+| PUT | `/api/v1/admin/qna/:id` | Update Q&A | Admin, Master Admin |
+| DELETE | `/api/v1/admin/qna/:id` | Delete Q&A | Admin, Master Admin |
+
+#### Quizzes
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/api/v1/admin/quizzes?topicId=<id>` | List quizzes | Admin, Master Admin |
+| POST | `/api/v1/admin/quizzes` | Create quiz | Admin, Master Admin |
+| PUT | `/api/v1/admin/quizzes/:id` | Update quiz | Admin, Master Admin |
+| DELETE | `/api/v1/admin/quizzes/:id` | Delete quiz | Admin, Master Admin |
+
+#### PDFs
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/api/v1/admin/pdfs?topicId=<id>` | List PDFs | Admin, Master Admin |
+| POST | `/api/v1/admin/pdfs` | Create PDF | Admin, Master Admin |
+| PUT | `/api/v1/admin/pdfs/:id` | Update PDF | Admin, Master Admin |
+| DELETE | `/api/v1/admin/pdfs/:id` | Delete PDF | Admin, Master Admin |
+
+#### Analytics
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/api/v1/admin/analytics` | View platform analytics | Master Admin |
 
 ## 🔑 Authentication Flow
 
@@ -235,57 +279,48 @@ POST /api/v1/users/bookmarks
 }
 ```
 
-## 🔄 Switching Databases
+## 🎯 Product Access Control
 
-### PostgreSQL
+The API uses a product access control system:
 
-```env
-# Update .env
-DATABASE_URL="postgresql://user:password@localhost:5432/learning_api"
-```
+- **Regular Users**: Can only access products explicitly granted to them via `UserProduct` relation
+- **Admins & Master Admins**: Have access to all products automatically
+- Access is checked on all product-related endpoints (topics, Q&A, quizzes, PDFs)
 
-```prisma
-// Update prisma/schema.prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-```
-
+**Granting Access:**
 ```bash
-npm run db:migrate
-```
-
-### MongoDB
-
-```env
-DATABASE_URL="mongodb://user:password@localhost:27017/learning_api"
-```
-
-```prisma
-datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL")
+POST /api/v1/admin/users/grant-product-access
+{
+  "userId": "user-uuid",
+  "productId": "product-uuid"
 }
 ```
 
 ## 📊 Database Schema
 
 ```
-users ──┐
-        ├─► bookmarks ──► qna
+users ──┬─► bookmarks ──┬─► qna
+        │               └─► pdfs
         ├─► progress ──► topics ──► products
-        └─► quiz_attempts ──► quizzes
+        ├─► quiz_attempts ──► quizzes
+        ├─► refresh_tokens
+        └─► user_products ──► products
+
+products ──► topics ──┬─► qna
+                      ├─► quizzes
+                      └─► pdfs
 ```
 
 ## 🛡️ Security Features
 
-- **Password Hashing**: bcrypt with salt rounds
-- **JWT Tokens**: Separate access & refresh tokens
-- **Rate Limiting**: Prevents brute force attacks
-- **Helmet**: Security headers
+- **Password Hashing**: bcrypt with 10 salt rounds
+- **JWT Tokens**: Separate access (15m) & refresh tokens (7d)
+- **Token Storage**: Refresh tokens stored in database with expiry
+- **Rate Limiting**: 100 requests per 15 minutes
+- **Helmet**: Security headers enabled
 - **CORS**: Configurable origin restrictions
-- **Role-Based Access**: Fine-grained permissions
+- **Role-Based Access**: USER, ADMIN, MASTER_ADMIN roles
+- **Input Validation**: Zod schema validation on all inputs
 
 ## 📈 Production Deployment
 

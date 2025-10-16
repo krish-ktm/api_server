@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Multi-Product Learning API",
-    "description": "Complete API test collection for the Multi-Product Learning Platform",
+    "description": "Complete API test collection for the Multi-Product Learning Platform with JWT authentication, role-based access control, and comprehensive admin endpoints",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -56,6 +56,11 @@
       "type": "string"
     },
     {
+      "key": "pdfId",
+      "value": "",
+      "type": "string"
+    },
+    {
       "key": "bookmarkId",
       "value": "",
       "type": "string"
@@ -68,6 +73,9 @@
         {
           "name": "Root Endpoint",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -98,6 +106,9 @@
         {
           "name": "Health Endpoint",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
@@ -132,6 +143,9 @@
         {
           "name": "Register User",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
               {
@@ -172,6 +186,9 @@
         {
           "name": "Login User",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
               {
@@ -280,7 +297,8 @@
               "raw": "{{baseUrl}}/api/v1/products",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "products"]
-            }
+            },
+            "description": "Get all products the authenticated user has access to. Admins get all products."
           },
           "event": [
             {
@@ -328,12 +346,12 @@
           ]
         },
         {
-          "name": "Get Q&A",
+          "name": "Get Q&A with Pagination",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/qna?page=1&limit=5",
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/qna?page=1&limit=10",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "products", "{{productId}}", "qna"],
               "query": [
@@ -343,7 +361,7 @@
                 },
                 {
                   "key": "limit",
-                  "value": "5"
+                  "value": "10"
                 }
               ]
             }
@@ -356,9 +374,9 @@
                   "pm.test('Q&A retrieved', function () {",
                   "    pm.response.to.have.status(200);",
                   "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('pagination');",
-                  "    if (jsonData.data.length > 0) {",
-                  "        pm.collectionVariables.set('qnaId', jsonData.data[0].id);",
+                  "    pm.expect(jsonData.data).to.have.property('pagination');",
+                  "    if (jsonData.data.qna.length > 0) {",
+                  "        pm.collectionVariables.set('qnaId', jsonData.data.qna[0].id);",
                   "    }",
                   "});"
                 ]
@@ -367,7 +385,7 @@
           ]
         },
         {
-          "name": "Get Q&A by Company (Amazon)",
+          "name": "Get Q&A by Company Tag",
           "request": {
             "method": "GET",
             "header": [],
@@ -387,6 +405,28 @@
                 {
                   "key": "limit",
                   "value": "5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Q&A by Topic and Level",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/qna?topic={{topicId}}&level=intermediate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "{{productId}}", "qna"],
+              "query": [
+                {
+                  "key": "topic",
+                  "value": "{{topicId}}"
+                },
+                {
+                  "key": "level",
+                  "value": "intermediate"
                 }
               ]
             }
@@ -451,7 +491,23 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "products", "{{productId}}", "pdfs"]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('PDFs retrieved', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data.length > 0) {",
+                  "        pm.collectionVariables.set('pdfId', jsonData.data[0].id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -565,7 +621,7 @@
           ]
         },
         {
-          "name": "Add Bookmark",
+          "name": "Add Bookmark (Q&A)",
           "request": {
             "method": "POST",
             "header": [
@@ -577,6 +633,27 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"qnaId\": \"{{qnaId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/bookmarks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "bookmarks"]
+            }
+          }
+        },
+        {
+          "name": "Add Bookmark (PDF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pdfId\": \"{{pdfId}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/users/bookmarks",
@@ -600,7 +677,7 @@
       ]
     },
     {
-      "name": "Admin",
+      "name": "Admin - User Access",
       "item": [
         {
           "name": "Grant Product Access",
@@ -620,7 +697,8 @@
               "raw": "{{baseUrl}}/api/v1/admin/users/grant-product-access",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "admin", "users", "grant-product-access"]
-            }
+            },
+            "description": "Grant a user access to a specific product. Requires ADMIN or MASTER_ADMIN role."
           }
         },
         {
@@ -641,7 +719,454 @@
               "raw": "{{baseUrl}}/api/v1/admin/users/revoke-product-access",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "admin", "users", "revoke-product-access"]
+            },
+            "description": "Revoke a user's access to a specific product. Requires ADMIN or MASTER_ADMIN role."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "products"]
+            },
+            "description": "Get all products with stats. Requires MASTER_ADMIN role."
+          }
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Interview Prep Course\",\n  \"slug\": \"interview-prep\",\n  \"description\": \"Complete interview preparation course\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "products"]
             }
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Interview Prep Course\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "products", "{{productId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "products", "{{productId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Topics",
+      "item": [
+        {
+          "name": "Get All Topics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/topics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "topics"]
+            }
+          }
+        },
+        {
+          "name": "Get Topics by Product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/topics?productId={{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "topics"],
+              "query": [
+                {
+                  "key": "productId",
+                  "value": "{{productId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Topic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"name\": \"Data Structures\",\n  \"description\": \"Learn about arrays, linked lists, trees, and graphs\",\n  \"order\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/topics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "topics"]
+            }
+          }
+        },
+        {
+          "name": "Update Topic",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Advanced Data Structures\",\n  \"order\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/topics/{{topicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "topics", "{{topicId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Topic",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/topics/{{topicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "topics", "{{topicId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Q&A",
+      "item": [
+        {
+          "name": "Get All Q&A",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/qna",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "qna"]
+            }
+          }
+        },
+        {
+          "name": "Get Q&A by Topic",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/qna?topicId={{topicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "qna"],
+              "query": [
+                {
+                  "key": "topicId",
+                  "value": "{{topicId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Q&A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topicId\": \"{{topicId}}\",\n  \"question\": \"What is a binary tree?\",\n  \"answer\": \"A binary tree is a tree data structure where each node has at most two children.\",\n  \"level\": \"BEGINNER\",\n  \"companyTags\": [\"Amazon\", \"Google\", \"Microsoft\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/qna",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "qna"]
+            }
+          }
+        },
+        {
+          "name": "Update Q&A",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answer\": \"Updated answer with more details\",\n  \"level\": \"INTERMEDIATE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/qna/{{qnaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "qna", "{{qnaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Q&A",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/qna/{{qnaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "qna", "{{qnaId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Quizzes",
+      "item": [
+        {
+          "name": "Get All Quizzes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/quizzes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "quizzes"]
+            }
+          }
+        },
+        {
+          "name": "Get Quizzes by Topic",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/quizzes?topicId={{topicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "quizzes"],
+              "query": [
+                {
+                  "key": "topicId",
+                  "value": "{{topicId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Quiz",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topicId\": \"{{topicId}}\",\n  \"question\": \"What is the time complexity of binary search?\",\n  \"options\": [\"O(n)\", \"O(log n)\", \"O(n^2)\", \"O(1)\"],\n  \"correctAnswer\": \"O(log n)\",\n  \"explanation\": \"Binary search divides the search space in half each iteration.\",\n  \"level\": \"INTERMEDIATE\",\n  \"companyTags\": [\"Amazon\", \"Facebook\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/quizzes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "quizzes"]
+            }
+          }
+        },
+        {
+          "name": "Update Quiz",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"explanation\": \"Updated explanation with more details\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/quizzes/{{quizId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "quizzes", "{{quizId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Quiz",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/quizzes/{{quizId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "quizzes", "{{quizId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - PDFs",
+      "item": [
+        {
+          "name": "Get All PDFs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pdfs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "pdfs"]
+            }
+          }
+        },
+        {
+          "name": "Get PDFs by Topic",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pdfs?topicId={{topicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "pdfs"],
+              "query": [
+                {
+                  "key": "topicId",
+                  "value": "{{topicId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create PDF",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topicId\": \"{{topicId}}\",\n  \"title\": \"Data Structures Cheat Sheet\",\n  \"description\": \"Complete reference for all data structures\",\n  \"fileUrl\": \"https://example.com/pdfs/ds-cheatsheet.pdf\",\n  \"fileSize\": 2048000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pdfs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "pdfs"]
+            }
+          }
+        },
+        {
+          "name": "Update PDF",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Data Structures Cheat Sheet\",\n  \"description\": \"Updated with more examples\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pdfs/{{pdfId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "pdfs", "{{pdfId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete PDF",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pdfs/{{pdfId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "pdfs", "{{pdfId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Analytics",
+      "item": [
+        {
+          "name": "Get Platform Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "analytics"]
+            },
+            "description": "Get comprehensive platform analytics including user counts, quiz statistics, and recent activity. Requires MASTER_ADMIN role."
           }
         }
       ]
