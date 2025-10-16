@@ -10,6 +10,7 @@ A scalable, database-independent API server for multiple learning products with 
 - **🏷️ Company Tag Filtering**: Filter Q&A and quizzes by company tags
 - **📊 Progress Tracking**: Track user quiz attempts and topic progress
 - **🔖 Bookmarks**: Save Q&A and PDFs for quick access
+- **⚡ Batch Operations**: Efficient bulk create/update/delete operations
 - **📈 Analytics Dashboard**: Admin analytics for usage insights
 - **🗄️ Database**: MySQL with Prisma ORM
 - **📖 API Documentation**: Auto-generated Swagger docs
@@ -213,6 +214,54 @@ docker run -p 3000:3000 \
 |---|---|---|---|
 | GET | `/api/v1/admin/analytics` | View platform analytics | Master Admin |
 
+### Admin Batch Operations (`/api/v1/admin/batch`)
+
+#### User-Product Access
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/api/v1/admin/batch/users/grant-product-access` | Grant multiple users product access | Admin, Master Admin |
+| POST | `/api/v1/admin/batch/users/revoke-product-access` | Revoke multiple users' product access | Admin, Master Admin |
+
+#### Q&A Batch Operations
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/api/v1/admin/batch/qna` | Create multiple Q&A items | Admin, Master Admin |
+| PUT | `/api/v1/admin/batch/qna` | Update multiple Q&A items | Admin, Master Admin |
+| DELETE | `/api/v1/admin/batch/qna` | Delete multiple Q&A items | Admin, Master Admin |
+
+#### Quiz Batch Operations
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/api/v1/admin/batch/quizzes` | Create multiple quizzes | Admin, Master Admin |
+| PUT | `/api/v1/admin/batch/quizzes` | Update multiple quizzes | Admin, Master Admin |
+| DELETE | `/api/v1/admin/batch/quizzes` | Delete multiple quizzes | Admin, Master Admin |
+
+#### PDF Batch Operations
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/api/v1/admin/batch/pdfs` | Create multiple PDFs | Admin, Master Admin |
+| PUT | `/api/v1/admin/batch/pdfs` | Update multiple PDFs | Admin, Master Admin |
+| DELETE | `/api/v1/admin/batch/pdfs` | Delete multiple PDFs | Admin, Master Admin |
+
+#### Topic Batch Operations
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/api/v1/admin/batch/topics` | Create multiple topics | Admin, Master Admin |
+| PUT | `/api/v1/admin/batch/topics` | Update multiple topics | Admin, Master Admin |
+
+### User Batch Operations (`/api/v1/users/batch`)
+
+#### Bookmarks
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/api/v1/users/batch/bookmarks` | Add multiple bookmarks at once | Private |
+| DELETE | `/api/v1/users/batch/bookmarks` | Remove multiple bookmarks | Private |
+
+#### Progress
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/api/v1/users/batch/progress` | Update progress for multiple topics | Private |
+
 ## 🔑 Authentication Flow
 
 ### 1. Register/Login
@@ -258,6 +307,50 @@ curl -X POST http://localhost:3000/api/v1/auth/refresh \
 ```bash
 # Get Amazon interview questions (page 2, 5 items per page)
 GET /api/v1/products/interview-prep-id/qna?company=amazon&level=intermediate&page=2&limit=5
+```
+
+### Batch Create Q&A
+
+```bash
+POST /api/v1/admin/batch/qna
+{
+  "items": [
+    {
+      "topicId": "topic-uuid-1",
+      "question": "What is recursion?",
+      "answer": "A function that calls itself",
+      "level": "BEGINNER",
+      "companyTags": ["Amazon", "Google"]
+    },
+    {
+      "topicId": "topic-uuid-1",
+      "question": "What is dynamic programming?",
+      "answer": "An optimization technique",
+      "level": "ADVANCED",
+      "companyTags": ["Facebook", "Microsoft"]
+    }
+  ]
+}
+```
+
+### Batch Update User Progress
+
+```bash
+POST /api/v1/users/batch/progress
+{
+  "progressUpdates": [
+    {
+      "topicId": "topic-uuid-1",
+      "completionPercent": 75,
+      "score": 85.5
+    },
+    {
+      "topicId": "topic-uuid-2",
+      "completionPercent": 100,
+      "score": 95.0
+    }
+  ]
+}
 ```
 
 ### Submit Quiz Answer
@@ -404,6 +497,12 @@ npx prisma db pull
 # Reset database (⚠️ destroys data)
 npx prisma migrate reset
 ```
+
+## 📚 Additional Documentation
+
+- **[Batch Operations Guide](./BATCH_OPERATIONS_GUIDE.md)** - Comprehensive guide to using batch endpoints
+- **[API Documentation](http://localhost:3000/api-docs)** - Swagger/OpenAPI interactive docs
+- **[Postman Collection](./postman_collection.json)** - Complete API test collection
 
 ## 📞 Support
 

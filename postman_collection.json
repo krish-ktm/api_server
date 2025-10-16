@@ -1170,6 +1170,355 @@
           }
         }
       ]
+    },
+    {
+      "name": "Admin - Batch Operations",
+      "item": [
+        {
+          "name": "Batch Grant Product Access",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operations\": [\n    {\n      \"userId\": \"{{userId}}\",\n      \"productId\": \"{{productId}}\"\n    },\n    {\n      \"userId\": \"user-uuid-2\",\n      \"productId\": \"{{productId}}\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/batch/users/grant-product-access",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "batch", "users", "grant-product-access"]
+            },
+            "description": "Grant multiple users access to products. Uses Promise.allSettled for independent processing."
+          }
+        },
+        {
+          "name": "Batch Revoke Product Access",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operations\": [\n    {\n      \"userId\": \"{{userId}}\",\n      \"productId\": \"{{productId}}\"\n    },\n    {\n      \"userId\": \"user-uuid-2\",\n      \"productId\": \"{{productId}}\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/batch/users/revoke-product-access",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "batch", "users", "revoke-product-access"]
+            }
+          }
+        },
+        {
+          "name": "Batch Create Q&A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"question\": \"What is a linked list?\",\n      \"answer\": \"A linear data structure where elements are stored in nodes.\",\n      \"level\": \"BEGINNER\",\n      \"companyTags\": [\"Amazon\", \"Google\"]\n    },\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"question\": \"What is a hash table?\",\n      \"answer\": \"A data structure that maps keys to values for efficient lookup.\",\n      \"level\": \"INTERMEDIATE\",\n      \"companyTags\": [\"Facebook\", \"Microsoft\"]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/batch/qna",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "batch", "qna"]
+            }
+          }
+        },
+        {
+          "name": "Batch Update Q&A",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"updates\": [\n    {\n      \"id\": \"{{qnaId}}\",\n      \"answer\": \"Updated answer with more details\",\n      \"level\": \"ADVANCED\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/batch/qna",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "batch", "qna"]
+            }
+          }
+        },
+        {
+          "name": "Batch Delete Q&A",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\n    \"{{qnaId}}\",\n    \"qna-uuid-2\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/batch/qna",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "batch", "qna"]
+            }
+          }
+        },
+        {
+          "name": "Batch Create Quizzes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"question\": \"What is Big O notation?\",\n      \"options\": [\"Time complexity measure\", \"Space complexity measure\", \"Both\", \"Neither\"],\n      \"correctAnswer\": \"Both\",\n      \"explanation\": \"Big O notation describes both time and space complexity.\",\n      \"level\": \"BEGINNER\",\n      \"companyTags\": [\"Amazon\", \"Google\"]\n    },\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"question\": \"What is the time complexity of quicksort?\",\n      \"options\": [\"O(n)\", \"O(n log n)\", \"O(n^2)\", \"O(log n)\"],\n      \"correctAnswer\": \"O(n log n)\",\n      \"explanation\": \"Average case is O(n log n), worst case is O(n^2).\",\n      \"level\": \"INTERMEDIATE\",\n      \"companyTags\": [\"Facebook\", \"Microsoft\"]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/batch/quizzes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "batch", "quizzes"]
+            }
+          }
+        },
+        {
+          "name": "Batch Update Quizzes",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"updates\": [\n    {\n      \"id\": \"{{quizId}}\",\n      \"explanation\": \"Updated explanation with more context\",\n      \"level\": \"ADVANCED\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/batch/quizzes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "batch", "quizzes"]
+            }
+          }
+        },
+        {
+          "name": "Batch Delete Quizzes",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\n    \"{{quizId}}\",\n    \"quiz-uuid-2\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/batch/quizzes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "batch", "quizzes"]
+            }
+          }
+        },
+        {
+          "name": "Batch Create PDFs",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"title\": \"Data Structures Reference\",\n      \"description\": \"Complete guide to data structures\",\n      \"fileUrl\": \"https://example.com/pdfs/ds-reference.pdf\",\n      \"fileSize\": 1024000\n    },\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"title\": \"Algorithms Handbook\",\n      \"description\": \"Common algorithms explained\",\n      \"fileUrl\": \"https://example.com/pdfs/algo-handbook.pdf\",\n      \"fileSize\": 2048000\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/batch/pdfs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "batch", "pdfs"]
+            }
+          }
+        },
+        {
+          "name": "Batch Update PDFs",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"updates\": [\n    {\n      \"id\": \"{{pdfId}}\",\n      \"title\": \"Updated PDF Title\",\n      \"description\": \"Updated description\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/batch/pdfs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "batch", "pdfs"]
+            }
+          }
+        },
+        {
+          "name": "Batch Delete PDFs",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\n    \"{{pdfId}}\",\n    \"pdf-uuid-2\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/batch/pdfs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "batch", "pdfs"]
+            }
+          }
+        },
+        {
+          "name": "Batch Create Topics",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"name\": \"Arrays and Strings\",\n      \"description\": \"Learn about arrays and string manipulation\",\n      \"order\": 1\n    },\n    {\n      \"productId\": \"{{productId}}\",\n      \"name\": \"Linked Lists\",\n      \"description\": \"Understanding linked list operations\",\n      \"order\": 2\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/batch/topics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "batch", "topics"]
+            }
+          }
+        },
+        {
+          "name": "Batch Update Topics",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"updates\": [\n    {\n      \"id\": \"{{topicId}}\",\n      \"name\": \"Updated Topic Name\",\n      \"order\": 5\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/batch/topics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "batch", "topics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User - Batch Operations",
+      "item": [
+        {
+          "name": "Batch Add Bookmarks",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookmarks\": [\n    {\n      \"qnaId\": \"{{qnaId}}\"\n    },\n    {\n      \"pdfId\": \"{{pdfId}}\"\n    },\n    {\n      \"qnaId\": \"qna-uuid-2\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/batch/bookmarks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "batch", "bookmarks"]
+            },
+            "description": "Add multiple bookmarks at once. Each bookmark must have either qnaId or pdfId."
+          }
+        },
+        {
+          "name": "Batch Delete Bookmarks",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookmarkIds\": [\n    \"{{bookmarkId}}\",\n    \"bookmark-uuid-2\",\n    \"bookmark-uuid-3\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/batch/bookmarks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "batch", "bookmarks"]
+            }
+          }
+        },
+        {
+          "name": "Batch Update Progress",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"progressUpdates\": [\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"completionPercent\": 75,\n      \"score\": 85.5\n    },\n    {\n      \"topicId\": \"topic-uuid-2\",\n      \"completionPercent\": 100,\n      \"score\": 95.0\n    },\n    {\n      \"topicId\": \"topic-uuid-3\",\n      \"completionPercent\": 50,\n      \"score\": 70.0\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/batch/progress",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "batch", "progress"]
+            },
+            "description": "Update progress for multiple topics at once. Uses upsert to create or update progress records."
+          }
+        }
+      ]
     }
   ]
 }
