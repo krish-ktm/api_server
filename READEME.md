@@ -129,6 +129,8 @@ docker run -p 3000:3000 \
 | POST | `/api/v1/auth/login` | Login user | Public |
 | POST | `/api/v1/auth/refresh` | Refresh access token | Public |
 | POST | `/api/v1/auth/logout` | Logout user | Private |
+| POST | `/api/v1/auth/forgot-password` | Request password reset token | Public |
+| POST | `/api/v1/auth/reset-password` | Reset password with token | Public |
 
 ### Users (`/api/v1/users`)
 
@@ -136,12 +138,15 @@ docker run -p 3000:3000 \
 |---|---|---|---|
 | GET | `/api/v1/users/profile` | Get user profile | Private |
 | PUT | `/api/v1/users/profile` | Update profile | Private |
+| PUT | `/api/v1/users/change-password` | Change password (authenticated) | Private |
 | GET | `/api/v1/users/bookmarks` | Get bookmarks | Private |
 | POST | `/api/v1/users/bookmarks` | Add bookmark | Private |
 | DELETE | `/api/v1/users/bookmarks/:bookmarkId` | Remove bookmark | Private |
 | GET | `/api/v1/users/progress` | Get progress | Private |
 | POST | `/api/v1/users/progress` | Update progress | Private |
 | GET | `/api/v1/users/stats` | Get user stats | Private |
+| GET | `/api/v1/users/quiz-attempts` | Get quiz attempt history (with filters) | Private |
+| GET | `/api/v1/users/quiz-attempts/:quizId` | Get attempts for specific quiz | Private |
 
 ### Products (`/api/v1/products`)
 
@@ -150,9 +155,12 @@ docker run -p 3000:3000 \
 | GET | `/api/v1/products/` | List accessible products | Private |
 | GET | `/api/v1/products/:productId/topics` | Get topics | Private |
 | GET | `/api/v1/products/:productId/qna` | Get Q&A (paginated) | Private |
+| GET | `/api/v1/products/:productId/qna/:qnaId` | Get single Q&A with bookmark status | Private |
 | GET | `/api/v1/products/:productId/quizzes` | Get quizzes | Private |
+| GET | `/api/v1/products/:productId/quizzes/:quizId` | Get single quiz (hides correct answer) | Private |
 | POST | `/api/v1/products/:productId/quizzes/:quizId/submit` | Submit answer | Private |
 | GET | `/api/v1/products/:productId/pdfs` | Get PDFs | Private |
+| GET | `/api/v1/products/:productId/pdfs/:pdfId` | Get single PDF with bookmark status | Private |
 
 **Query Parameters for Filtering:**
 - `?company=amazon` - Filter by company tag
@@ -162,6 +170,15 @@ docker run -p 3000:3000 \
 - `?limit=10` - Number of items per page
 
 ### Admin (`/api/v1/admin`)
+
+#### User Management
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/api/v1/admin/users` | List all users (pagination, filtering) | Admin, Master Admin |
+| GET | `/api/v1/admin/users/:id` | Get single user details | Admin, Master Admin |
+| PUT | `/api/v1/admin/users/:id/role` | Change user role | Admin, Master Admin |
+| DELETE | `/api/v1/admin/users/:id` | Delete user | Admin, Master Admin |
+| GET | `/api/v1/admin/users/:userId/products` | Get all products assigned to user | Admin, Master Admin |
 
 #### User-Product Access
 | Method | Endpoint | Description | Access |
@@ -173,6 +190,7 @@ docker run -p 3000:3000 \
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
 | GET | `/api/v1/admin/products` | List all products | Master Admin |
+| GET | `/api/v1/admin/products/:id` | Get single product with topics | Master Admin |
 | POST | `/api/v1/admin/products` | Create product | Master Admin |
 | PUT | `/api/v1/admin/products/:id` | Update product | Master Admin |
 | DELETE | `/api/v1/admin/products/:id` | Delete product | Master Admin |
@@ -181,6 +199,7 @@ docker run -p 3000:3000 \
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
 | GET | `/api/v1/admin/topics?productId=<id>` | List topics | Admin, Master Admin |
+| GET | `/api/v1/admin/topics/:id` | Get single topic details | Admin, Master Admin |
 | POST | `/api/v1/admin/topics` | Create topic | Admin, Master Admin |
 | PUT | `/api/v1/admin/topics/:id` | Update topic | Admin, Master Admin |
 | DELETE | `/api/v1/admin/topics/:id` | Delete topic | Admin, Master Admin |
@@ -189,6 +208,7 @@ docker run -p 3000:3000 \
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
 | GET | `/api/v1/admin/qna?topicId=<id>` | List Q&A | Admin, Master Admin |
+| GET | `/api/v1/admin/qna/:id` | Get single Q&A details | Admin, Master Admin |
 | POST | `/api/v1/admin/qna` | Create Q&A | Admin, Master Admin |
 | PUT | `/api/v1/admin/qna/:id` | Update Q&A | Admin, Master Admin |
 | DELETE | `/api/v1/admin/qna/:id` | Delete Q&A | Admin, Master Admin |
@@ -197,6 +217,7 @@ docker run -p 3000:3000 \
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
 | GET | `/api/v1/admin/quizzes?topicId=<id>` | List quizzes | Admin, Master Admin |
+| GET | `/api/v1/admin/quizzes/:id` | Get single quiz details | Admin, Master Admin |
 | POST | `/api/v1/admin/quizzes` | Create quiz | Admin, Master Admin |
 | PUT | `/api/v1/admin/quizzes/:id` | Update quiz | Admin, Master Admin |
 | DELETE | `/api/v1/admin/quizzes/:id` | Delete quiz | Admin, Master Admin |
@@ -205,6 +226,7 @@ docker run -p 3000:3000 \
 | Method | Endpoint | Description | Access |
 |---|---|---|---|
 | GET | `/api/v1/admin/pdfs?topicId=<id>` | List PDFs | Admin, Master Admin |
+| GET | `/api/v1/admin/pdfs/:id` | Get single PDF details | Admin, Master Admin |
 | POST | `/api/v1/admin/pdfs` | Create PDF | Admin, Master Admin |
 | PUT | `/api/v1/admin/pdfs/:id` | Update PDF | Admin, Master Admin |
 | DELETE | `/api/v1/admin/pdfs/:id` | Delete PDF | Admin, Master Admin |

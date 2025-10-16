@@ -1,8 +1,9 @@
 {
   "info": {
     "name": "Multi-Product Learning API",
-    "description": "Complete API test collection for the Multi-Product Learning Platform with JWT authentication, role-based access control, and comprehensive admin endpoints",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "description": "Complete API test collection for the Multi-Product Learning Platform with JWT authentication, role-based access control, and comprehensive admin endpoints. Updated with all recent features including password management, quiz attempts history, single item details, and user management.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "multi-product-learning-api-v2"
   },
   "auth": {
     "type": "bearer",
@@ -64,6 +65,11 @@
       "key": "bookmarkId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "resetToken",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -83,25 +89,7 @@
               "host": ["{{baseUrl}}"],
               "path": [""]
             }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('Response has success field', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('success');",
-                  "    pm.expect(jsonData.success).to.be.true;",
-                  "});"
-                ]
-              }
-            }
-          ]
+          }
         },
         {
           "name": "Health Endpoint",
@@ -116,24 +104,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["health"]
             }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('Health check returns healthy status', function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.status).to.eql('healthy');",
-                  "});"
-                ]
-              }
-            }
-          ]
+          }
         }
       ]
     },
@@ -172,8 +143,6 @@
                   "    pm.response.to.have.status(201);",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.success).to.be.true;",
-                  "    ",
-                  "    // Save tokens",
                   "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
                   "    pm.collectionVariables.set('refreshToken', jsonData.data.refreshToken);",
                   "    pm.collectionVariables.set('userId', jsonData.data.user.id);",
@@ -215,7 +184,6 @@
                   "    pm.response.to.have.status(200);",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.success).to.be.true;",
-                  "    ",
                   "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
                   "    pm.collectionVariables.set('refreshToken', jsonData.data.refreshToken);",
                   "});"
@@ -263,6 +231,72 @@
           ]
         },
         {
+          "name": "Forgot Password",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "forgot-password"]
+            },
+            "description": "Request a password reset token. In production, this would be sent via email."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Password reset requested', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.resetToken) {",
+                  "        pm.collectionVariables.set('resetToken', jsonData.data.resetToken);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"newPassword\": \"NewSecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "reset-password"]
+            },
+            "description": "Reset password using the token from forgot-password endpoint"
+          }
+        },
+        {
           "name": "Logout User",
           "request": {
             "method": "POST",
@@ -280,6 +314,244 @@
               "raw": "{{baseUrl}}/api/v1/auth/logout",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"TestPass123!\",\n  \"newPassword\": \"NewPassword456!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "change-password"]
+            },
+            "description": "Change password for the authenticated user. Requires current password."
+          }
+        },
+        {
+          "name": "Get Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Progress",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/progress",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "progress"]
+            }
+          }
+        },
+        {
+          "name": "Update Progress",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topicId\": \"{{topicId}}\",\n  \"completionPercent\": 75,\n  \"score\": 85.5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/progress",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "progress"]
+            }
+          }
+        },
+        {
+          "name": "Get Quiz Attempts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/quiz-attempts?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "quiz-attempts"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "productId",
+                  "value": "{{productId}}",
+                  "disabled": true
+                },
+                {
+                  "key": "topicId",
+                  "value": "{{topicId}}",
+                  "disabled": true
+                },
+                {
+                  "key": "isCorrect",
+                  "value": "true",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get quiz attempt history with optional filtering by product, topic, and correctness"
+          }
+        },
+        {
+          "name": "Get Quiz Attempts for Specific Quiz",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/quiz-attempts/{{quizId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "quiz-attempts", "{{quizId}}"]
+            },
+            "description": "Get all attempts for a specific quiz with statistics"
+          }
+        },
+        {
+          "name": "Get Bookmarks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/bookmarks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "bookmarks"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Bookmarks retrieved', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data.length > 0) {",
+                  "        pm.collectionVariables.set('bookmarkId', jsonData.data[0].id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add Bookmark (Q&A)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qnaId\": \"{{qnaId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/bookmarks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "bookmarks"]
+            }
+          }
+        },
+        {
+          "name": "Add Bookmark (PDF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pdfId\": \"{{pdfId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/bookmarks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "bookmarks"]
+            }
+          }
+        },
+        {
+          "name": "Delete Bookmark",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/bookmarks/{{bookmarkId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "bookmarks", "{{bookmarkId}}"]
             }
           }
         }
@@ -385,51 +657,16 @@
           ]
         },
         {
-          "name": "Get Q&A by Company Tag",
+          "name": "Get Single Q&A",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/qna?company=amazon&page=1&limit=5",
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/qna/{{qnaId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "products", "{{productId}}", "qna"],
-              "query": [
-                {
-                  "key": "company",
-                  "value": "amazon"
-                },
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "5"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Get Q&A by Topic and Level",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/qna?topic={{topicId}}&level=intermediate",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "products", "{{productId}}", "qna"],
-              "query": [
-                {
-                  "key": "topic",
-                  "value": "{{topicId}}"
-                },
-                {
-                  "key": "level",
-                  "value": "intermediate"
-                }
-              ]
-            }
+              "path": ["api", "v1", "products", "{{productId}}", "qna", "{{qnaId}}"]
+            },
+            "description": "Get single Q&A with bookmark status"
           }
         },
         {
@@ -461,6 +698,19 @@
           ]
         },
         {
+          "name": "Get Single Quiz",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/quizzes/{{quizId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "{{productId}}", "quizzes", "{{quizId}}"]
+            },
+            "description": "Get single quiz details. Correct answer is hidden until user has attempted the quiz."
+          }
+        },
+        {
           "name": "Submit Quiz Answer",
           "request": {
             "method": "POST",
@@ -472,7 +722,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"selectedAnswer\": \"Array\",\n  \"timeTaken\": 30\n}"
+              "raw": "{\n  \"selectedAnswer\": \"O(log n)\",\n  \"timeTaken\": 30\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/products/{{productId}}/quizzes/{{quizId}}/submit",
@@ -508,26 +758,68 @@
               }
             }
           ]
-        }
-      ]
-    },
-    {
-      "name": "User",
-      "item": [
+        },
         {
-          "name": "Get Profile",
+          "name": "Get Single PDF",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/users/profile",
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/pdfs/{{pdfId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "profile"]
-            }
+              "path": ["api", "v1", "products", "{{productId}}", "pdfs", "{{pdfId}}"]
+            },
+            "description": "Get single PDF with bookmark status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - User Management",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "role",
+                  "value": "USER",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all users with pagination and optional role filtering"
           }
         },
         {
-          "name": "Update Profile",
+          "name": "Get Single User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "users", "{{userId}}"]
+            },
+            "description": "Get detailed user information including products and statistics"
+          }
+        },
+        {
+          "name": "Change User Role",
           "request": {
             "method": "PUT",
             "header": [
@@ -538,147 +830,42 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Test User\"\n}"
+              "raw": "{\n  \"role\": \"ADMIN\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/users/profile",
+              "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}/role",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "profile"]
-            }
-          }
-        },
-        {
-          "name": "Get Stats",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/stats",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "stats"]
-            }
-          }
-        },
-        {
-          "name": "Get Progress",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/progress",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "progress"]
-            }
-          }
-        },
-        {
-          "name": "Update Progress",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"topicId\": \"{{topicId}}\",\n  \"completionPercent\": 75,\n  \"score\": 85.5\n}"
+              "path": ["api", "v1", "admin", "users", "{{userId}}", "role"]
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/progress",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "progress"]
-            }
+            "description": "Change a user's role (USER, ADMIN, MASTER_ADMIN)"
           }
         },
         {
-          "name": "Get Bookmarks",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/bookmarks",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "bookmarks"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Bookmarks retrieved', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "    var jsonData = pm.response.json();",
-                  "    if (jsonData.data.length > 0) {",
-                  "        pm.collectionVariables.set('bookmarkId', jsonData.data[0].id);",
-                  "    }",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Add Bookmark (Q&A)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"qnaId\": \"{{qnaId}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/bookmarks",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "bookmarks"]
-            }
-          }
-        },
-        {
-          "name": "Add Bookmark (PDF)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"pdfId\": \"{{pdfId}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/bookmarks",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "bookmarks"]
-            }
-          }
-        },
-        {
-          "name": "Delete Bookmark",
+          "name": "Delete User",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/users/bookmarks/{{bookmarkId}}",
+              "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "bookmarks", "{{bookmarkId}}"]
-            }
+              "path": ["api", "v1", "admin", "users", "{{userId}}"]
+            },
+            "description": "Delete a user (cannot delete yourself)"
           }
-        }
-      ]
-    },
-    {
-      "name": "Admin - User Access",
-      "item": [
+        },
+        {
+          "name": "Get User Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "users", "{{userId}}", "products"]
+            },
+            "description": "Get all products assigned to a specific user"
+          }
+        },
         {
           "name": "Grant Product Access",
           "request": {
@@ -697,8 +884,7 @@
               "raw": "{{baseUrl}}/api/v1/admin/users/grant-product-access",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "admin", "users", "grant-product-access"]
-            },
-            "description": "Grant a user access to a specific product. Requires ADMIN or MASTER_ADMIN role."
+            }
           }
         },
         {
@@ -719,8 +905,7 @@
               "raw": "{{baseUrl}}/api/v1/admin/users/revoke-product-access",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "admin", "users", "revoke-product-access"]
-            },
-            "description": "Revoke a user's access to a specific product. Requires ADMIN or MASTER_ADMIN role."
+            }
           }
         }
       ]
@@ -737,8 +922,20 @@
               "raw": "{{baseUrl}}/api/v1/admin/products",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "admin", "products"]
+            }
+          }
+        },
+        {
+          "name": "Get Single Product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "products", "{{productId}}"]
             },
-            "description": "Get all products with stats. Requires MASTER_ADMIN role."
+            "description": "Get single product with topics and counts"
           }
         },
         {
@@ -813,21 +1010,16 @@
           }
         },
         {
-          "name": "Get Topics by Product",
+          "name": "Get Single Topic",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/admin/topics?productId={{productId}}",
+              "raw": "{{baseUrl}}/api/v1/admin/topics/{{topicId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "admin", "topics"],
-              "query": [
-                {
-                  "key": "productId",
-                  "value": "{{productId}}"
-                }
-              ]
-            }
+              "path": ["api", "v1", "admin", "topics", "{{topicId}}"]
+            },
+            "description": "Get single topic with product info and content counts"
           }
         },
         {
@@ -902,21 +1094,16 @@
           }
         },
         {
-          "name": "Get Q&A by Topic",
+          "name": "Get Single Q&A",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/admin/qna?topicId={{topicId}}",
+              "raw": "{{baseUrl}}/api/v1/admin/qna/{{qnaId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "admin", "qna"],
-              "query": [
-                {
-                  "key": "topicId",
-                  "value": "{{topicId}}"
-                }
-              ]
-            }
+              "path": ["api", "v1", "admin", "qna", "{{qnaId}}"]
+            },
+            "description": "Get single Q&A with topic and product info"
           }
         },
         {
@@ -991,21 +1178,16 @@
           }
         },
         {
-          "name": "Get Quizzes by Topic",
+          "name": "Get Single Quiz",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/admin/quizzes?topicId={{topicId}}",
+              "raw": "{{baseUrl}}/api/v1/admin/quizzes/{{quizId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "admin", "quizzes"],
-              "query": [
-                {
-                  "key": "topicId",
-                  "value": "{{topicId}}"
-                }
-              ]
-            }
+              "path": ["api", "v1", "admin", "quizzes", "{{quizId}}"]
+            },
+            "description": "Get single quiz with topic, product info and attempt counts"
           }
         },
         {
@@ -1080,21 +1262,16 @@
           }
         },
         {
-          "name": "Get PDFs by Topic",
+          "name": "Get Single PDF",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/admin/pdfs?topicId={{topicId}}",
+              "raw": "{{baseUrl}}/api/v1/admin/pdfs/{{pdfId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "admin", "pdfs"],
-              "query": [
-                {
-                  "key": "topicId",
-                  "value": "{{topicId}}"
-                }
-              ]
-            }
+              "path": ["api", "v1", "admin", "pdfs", "{{pdfId}}"]
+            },
+            "description": "Get single PDF with topic and product info"
           }
         },
         {
@@ -1166,7 +1343,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "admin", "analytics"]
             },
-            "description": "Get comprehensive platform analytics including user counts, quiz statistics, and recent activity. Requires MASTER_ADMIN role."
+            "description": "Get comprehensive platform analytics including user counts, quiz statistics, and recent activity"
           }
         }
       ]
@@ -1192,8 +1369,7 @@
               "raw": "{{baseUrl}}/api/v1/admin/batch/users/grant-product-access",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "admin", "batch", "users", "grant-product-access"]
-            },
-            "description": "Grant multiple users access to products. Uses Promise.allSettled for independent processing."
+            }
           }
         },
         {
@@ -1208,7 +1384,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"operations\": [\n    {\n      \"userId\": \"{{userId}}\",\n      \"productId\": \"{{productId}}\"\n    },\n    {\n      \"userId\": \"user-uuid-2\",\n      \"productId\": \"{{productId}}\"\n    }\n  ]\n}"
+              "raw": "{\n  \"operations\": [\n    {\n      \"userId\": \"{{userId}}\",\n      \"productId\": \"{{productId}}\"\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/admin/batch/users/revoke-product-access",
@@ -1292,7 +1468,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"items\": [\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"question\": \"What is Big O notation?\",\n      \"options\": [\"Time complexity measure\", \"Space complexity measure\", \"Both\", \"Neither\"],\n      \"correctAnswer\": \"Both\",\n      \"explanation\": \"Big O notation describes both time and space complexity.\",\n      \"level\": \"BEGINNER\",\n      \"companyTags\": [\"Amazon\", \"Google\"]\n    },\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"question\": \"What is the time complexity of quicksort?\",\n      \"options\": [\"O(n)\", \"O(n log n)\", \"O(n^2)\", \"O(log n)\"],\n      \"correctAnswer\": \"O(n log n)\",\n      \"explanation\": \"Average case is O(n log n), worst case is O(n^2).\",\n      \"level\": \"INTERMEDIATE\",\n      \"companyTags\": [\"Facebook\", \"Microsoft\"]\n    }\n  ]\n}"
+              "raw": "{\n  \"items\": [\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"question\": \"What is Big O notation?\",\n      \"options\": [\"Time complexity measure\", \"Space complexity measure\", \"Both\", \"Neither\"],\n      \"correctAnswer\": \"Both\",\n      \"explanation\": \"Big O notation describes both time and space complexity.\",\n      \"level\": \"BEGINNER\",\n      \"companyTags\": [\"Amazon\", \"Google\"]\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/admin/batch/quizzes",
@@ -1355,7 +1531,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"items\": [\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"title\": \"Data Structures Reference\",\n      \"description\": \"Complete guide to data structures\",\n      \"fileUrl\": \"https://example.com/pdfs/ds-reference.pdf\",\n      \"fileSize\": 1024000\n    },\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"title\": \"Algorithms Handbook\",\n      \"description\": \"Common algorithms explained\",\n      \"fileUrl\": \"https://example.com/pdfs/algo-handbook.pdf\",\n      \"fileSize\": 2048000\n    }\n  ]\n}"
+              "raw": "{\n  \"items\": [\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"title\": \"Data Structures Reference\",\n      \"description\": \"Complete guide to data structures\",\n      \"fileUrl\": \"https://example.com/pdfs/ds-reference.pdf\",\n      \"fileSize\": 1024000\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/admin/batch/pdfs",
@@ -1465,14 +1641,13 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"bookmarks\": [\n    {\n      \"qnaId\": \"{{qnaId}}\"\n    },\n    {\n      \"pdfId\": \"{{pdfId}}\"\n    },\n    {\n      \"qnaId\": \"qna-uuid-2\"\n    }\n  ]\n}"
+              "raw": "{\n  \"bookmarks\": [\n    {\n      \"qnaId\": \"{{qnaId}}\"\n    },\n    {\n      \"pdfId\": \"{{pdfId}}\"\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/users/batch/bookmarks",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "batch", "bookmarks"]
-            },
-            "description": "Add multiple bookmarks at once. Each bookmark must have either qnaId or pdfId."
+            }
           }
         },
         {
@@ -1487,7 +1662,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"bookmarkIds\": [\n    \"{{bookmarkId}}\",\n    \"bookmark-uuid-2\",\n    \"bookmark-uuid-3\"\n  ]\n}"
+              "raw": "{\n  \"bookmarkIds\": [\n    \"{{bookmarkId}}\",\n    \"bookmark-uuid-2\"\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/users/batch/bookmarks",
@@ -1508,14 +1683,13 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"progressUpdates\": [\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"completionPercent\": 75,\n      \"score\": 85.5\n    },\n    {\n      \"topicId\": \"topic-uuid-2\",\n      \"completionPercent\": 100,\n      \"score\": 95.0\n    },\n    {\n      \"topicId\": \"topic-uuid-3\",\n      \"completionPercent\": 50,\n      \"score\": 70.0\n    }\n  ]\n}"
+              "raw": "{\n  \"progressUpdates\": [\n    {\n      \"topicId\": \"{{topicId}}\",\n      \"completionPercent\": 75,\n      \"score\": 85.5\n    },\n    {\n      \"topicId\": \"topic-uuid-2\",\n      \"completionPercent\": 100,\n      \"score\": 95.0\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/users/batch/progress",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "batch", "progress"]
-            },
-            "description": "Update progress for multiple topics at once. Uses upsert to create or update progress records."
+            }
           }
         }
       ]
