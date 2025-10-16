@@ -58,6 +58,244 @@ const pdfSchema = z.object({
   fileSize: z.number().int().optional()
 });
 
+// ============= USER MANAGEMENT =============
+
+/**
+ * @route   GET /api/v1/admin/users
+ * @desc    List all users with pagination and filtering
+ * @access  Admin, Master Admin
+ */
+router.get('/users', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<void> => {
+  try {
+    const { role, page = '1', limit = '10' } = req.query;
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const take = parseInt(limit as string);
+
+    const whereClause: any = {};
+    if (role) {
+      whereClause.role = (role as string).toUpperCase();
+    }
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          _count: {
+            select: {
+              userProducts: true,
+              quizAttempts: true
+            }
+          }
+        },
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.user.count({ where: whereClause })
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        users,
+        pagination: {
+          page: parseInt(page as string),
+          limit: parseInt(limit as string),
+          total,
+          totalPages: Math.ceil(total / take)
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+/**
+ * @route   GET /api/v1/admin/users/:id
+ * @desc    Get single user details
+ * @access  Admin, Master Admin
+ */
+router.get('/users/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<any> => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+        userProducts: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                slug: true
+              }
+            }
+          }
+        },
+        _count: {
+          select: {
+            quizAttempts: true,
+            bookmarks: true,
+            progress: true
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+/**
+ * @route   PUT /api/v1/admin/users/:id/role
+ * @desc    Change user role
+ * @access  Admin, Master Admin
+ */
+router.put('/users/:id/role', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<any> => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    if (!role || !['USER', 'ADMIN', 'MASTER_ADMIN'].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid role is required (USER, ADMIN, MASTER_ADMIN)'
+      });
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: { role },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'User role updated successfully',
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+/**
+ * @route   DELETE /api/v1/admin/users/:id
+ * @desc    Delete user
+ * @access  Admin, Master Admin
+ */
+router.delete('/users/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<any> => {
+  try {
+    const { id } = req.params;
+    const requesterId = req.user!.userId;
+
+    if (id === requesterId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete your own account'
+      });
+    }
+
+    await prisma.user.delete({
+      where: { id }
+    });
+
+    res.json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+/**
+ * @route   GET /api/v1/admin/users/:userId/products
+ * @desc    Get all products assigned to a user
+ * @access  Admin, Master Admin
+ */
+router.get('/users/:userId/products', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<any> => {
+  try {
+    const { userId } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const userProducts = await prisma.userProduct.findMany({
+      where: { userId },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            description: true,
+            isActive: true,
+            createdAt: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        user,
+        products: userProducts.map(up => ({
+          ...up.product,
+          grantedAt: up.createdAt
+        }))
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // ============= USER-PRODUCT ACCESS =============
 
 /**
@@ -127,6 +365,58 @@ router.post('/users/revoke-product-access', authorize('ADMIN', 'MASTER_ADMIN'), 
 });
 
 // ============= PRODUCTS (Master Admin Only) =============
+
+/**
+ * @route   GET /api/v1/admin/products/:id
+ * @desc    Get single product details
+ * @access  Master Admin
+ */
+router.get('/products/:id', authorize('MASTER_ADMIN'), async (req, res): Promise<any> => {
+  try {
+    const { id } = req.params;
+
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        topics: {
+          select: {
+            id: true,
+            name: true,
+            order: true,
+            _count: {
+              select: {
+                qna: true,
+                quizzes: true,
+                pdfs: true
+              }
+            }
+          },
+          orderBy: { order: 'asc' }
+        },
+        _count: {
+          select: {
+            topics: true,
+            userAccess: true
+          }
+        }
+      }
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: product
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 /**
  * @route   GET /api/v1/admin/products
@@ -241,6 +531,51 @@ router.delete('/products/:id', authorize('MASTER_ADMIN'), async (req, res) => {
 });
 
 // ============= TOPICS (Admin+) =============
+
+/**
+ * @route   GET /api/v1/admin/topics/:id
+ * @desc    Get single topic details
+ * @access  Admin, Master Admin
+ */
+router.get('/topics/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<any> => {
+  try {
+    const { id } = req.params;
+
+    const topic = await prisma.topic.findUnique({
+      where: { id },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
+        _count: {
+          select: {
+            qna: true,
+            quizzes: true,
+            pdfs: true
+          }
+        }
+      }
+    });
+
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topic not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: topic
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 /**
  * @route   GET /api/v1/admin/topics
@@ -367,6 +702,54 @@ router.delete('/topics/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res
 // ============= Q&A (Admin+) =============
 
 /**
+ * @route   GET /api/v1/admin/qna/:id
+ * @desc    Get single Q&A details
+ * @access  Admin, Master Admin
+ */
+router.get('/qna/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<any> => {
+  try {
+    const { id } = req.params;
+
+    const qna = await prisma.qnA.findUnique({
+      where: { id },
+      include: {
+        topic: {
+          select: {
+            id: true,
+            name: true,
+            product: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
+        _count: {
+          select: {
+            bookmarks: true
+          }
+        }
+      }
+    });
+
+    if (!qna) {
+      return res.status(404).json({
+        success: false,
+        message: 'Q&A not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: qna
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+/**
  * @route   GET /api/v1/admin/qna
  * @desc    Get all Q&A (optionally filtered)
  * @access  Admin, Master Admin
@@ -488,6 +871,54 @@ router.delete('/qna/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res) =
 });
 
 // ============= QUIZZES (Admin+) =============
+
+/**
+ * @route   GET /api/v1/admin/quizzes/:id
+ * @desc    Get single quiz details
+ * @access  Admin, Master Admin
+ */
+router.get('/quizzes/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<any> => {
+  try {
+    const { id } = req.params;
+
+    const quiz = await prisma.quiz.findUnique({
+      where: { id },
+      include: {
+        topic: {
+          select: {
+            id: true,
+            name: true,
+            product: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
+        _count: {
+          select: {
+            attempts: true
+          }
+        }
+      }
+    });
+
+    if (!quiz) {
+      return res.status(404).json({
+        success: false,
+        message: 'Quiz not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: quiz
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 /**
  * @route   GET /api/v1/admin/quizzes
@@ -616,6 +1047,54 @@ router.delete('/quizzes/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, re
 });
 
 // ============= PDFs (Admin+) =============
+
+/**
+ * @route   GET /api/v1/admin/pdfs/:id
+ * @desc    Get single PDF details
+ * @access  Admin, Master Admin
+ */
+router.get('/pdfs/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<any> => {
+  try {
+    const { id } = req.params;
+
+    const pdf = await prisma.pDF.findUnique({
+      where: { id },
+      include: {
+        topic: {
+          select: {
+            id: true,
+            name: true,
+            product: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
+        _count: {
+          select: {
+            bookmarks: true
+          }
+        }
+      }
+    });
+
+    if (!pdf) {
+      return res.status(404).json({
+        success: false,
+        message: 'PDF not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: pdf
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 /**
  * @route   GET /api/v1/admin/pdfs

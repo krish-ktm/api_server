@@ -29,12 +29,13 @@ model User {
   role          Role        @default(USER)
   createdAt     DateTime    @default(now()) @map("created_at")
   updatedAt     DateTime    @updatedAt @map("updated_at")
-  
+
   bookmarks     Bookmark[]
   progress      Progress[]
   quizAttempts  QuizAttempt[]
   refreshTokens RefreshToken[]
   userProducts  UserProduct[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
 }
@@ -57,10 +58,22 @@ model RefreshToken {
   userId    String   @map("user_id")
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
-  
+
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
 }
 
 model Product {

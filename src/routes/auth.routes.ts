@@ -5,6 +5,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+import crypto from 'crypto';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
@@ -20,6 +21,15 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string()
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email()
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string(),
+  newPassword: z.string().min(8)
 });
 
 // Generate tokens
@@ -265,6 +275,118 @@ router.post('/logout', authenticate, async (req, res) => {
       message: 'Logout successful'
     });
   } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+/**
+ * @route   POST /api/v1/auth/forgot-password
+ * @desc    Request password reset token
+ * @access  Public
+ */
+router.post('/forgot-password', async (req, res): Promise<any> => {
+  try {
+    const { email } = forgotPasswordSchema.parse(req.body);
+
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      return res.json({
+        success: true,
+        message: 'If the email exists, a password reset link has been sent'
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    await prisma.passwordResetToken.create({
+      data: {
+        token: hashedToken,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'If the email exists, a password reset link has been sent',
+      data: {
+        resetToken
+      }
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: error.errors
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+/**
+ * @route   POST /api/v1/auth/reset-password
+ * @desc    Reset password with token
+ * @access  Public
+ */
+router.post('/reset-password', async (req, res): Promise<any> => {
+  try {
+    const { token, newPassword } = resetPasswordSchema.parse(req.body);
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const resetToken = await prisma.passwordResetToken.findUnique({
+      where: { token: hashedToken },
+      include: { user: true }
+    });
+
+    if (!resetToken || resetToken.expiresAt < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset token'
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: resetToken.userId },
+        data: { passwordHash }
+      }),
+      prisma.passwordResetToken.delete({
+        where: { id: resetToken.id }
+      }),
+      prisma.refreshToken.deleteMany({
+        where: { userId: resetToken.userId }
+      })
+    ]);
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully'
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: error.errors
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'Server error'
