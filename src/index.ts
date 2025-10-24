@@ -8,6 +8,15 @@ import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 
+// Load environment variables first
+dotenv.config();
+
+// Log startup to help debug Vercel deployment
+console.log('Starting application...');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+
 // Import routes
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
@@ -15,9 +24,6 @@ import productRoutes from './routes/product.routes';
 import adminRoutes from './routes/admin.routes';
 import adminBatchRoutes from './routes/admin.batch.routes';
 import userBatchRoutes from './routes/user.batch.routes';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 
@@ -138,8 +144,10 @@ app.use(errorHandler);
 
 // ============= START SERVER =============
 
-app.listen(PORT, () => {
-  console.log(`
+// Only start server in development (Vercel handles this in production)
+if (process.env.NODE_ENV !== 'production') {
+  const server = app.listen(PORT, () => {
+    console.log(`
 ╔════════════════════════════════════════════════════════════╗
 ║                                                            ║
 ║   🚀 Multi-Product Learning API Server                     ║
@@ -149,7 +157,24 @@ app.listen(PORT, () => {
 ║   Environment: ${process.env.NODE_ENV || 'development'}    ║
 ║                                                            ║
 ╚════════════════════════════════════════════════════════════╝
-  `);
+    `);
+  });
+
+  server.on('error', (error: any) => {
+    console.error('Server error:', error);
+    process.exit(1);
+  });
+} else {
+  console.log('Running in production mode (serverless)');
+}
+
+// Handle uncaught errors
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 export default app;

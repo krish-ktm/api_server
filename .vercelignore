@@ -1,0 +1,16 @@
+node_modules
+src
+prisma
+scripts
+.env.local
+.env.development
+*.log
+.vscode
+test-api.sh
+test-api.bat
+postman_collection.json
+READEME.md
+VERCEL_DEPLOYMENT_GUIDE.md
+docker
+docker-compose.yml
+database.sql
