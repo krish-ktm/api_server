@@ -7,6 +7,7 @@ import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { authenticate } from '../middleware/auth';
+import { asyncHandler } from '../middleware/errorHandler';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -54,344 +55,270 @@ const generateRefreshToken = (userId: string): string => {
  * @desc    Register a new user
  * @access  Public
  */
-router.post('/register', async (req, res): Promise<any> => {
-  try {
-    const { name, email, password } = registerSchema.parse(req.body);
+router.post('/register', asyncHandler(async (req, res) => {
+  const { name, email, password } = registerSchema.parse(req.body);
 
-    // Check if user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
+  // Check if user exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email }
+  });
 
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'User already exists'
-      });
-    }
-
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        passwordHash
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true
-      }
-    });
-
-    // Generate tokens
-    const accessToken = generateAccessToken(user.id, user.email, user.role);
-    const refreshToken = generateRefreshToken(user.id);
-
-    // Store refresh token
-    await prisma.refreshToken.create({
-      data: {
-        token: refreshToken,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
-      }
-    });
-
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      data: {
-        user,
-        accessToken,
-        refreshToken
-      }
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation error',
-        errors: error.errors
-      });
-    }
-
-    res.status(500).json({
+  if (existingUser) {
+    return res.status(400).json({
       success: false,
-      message: 'Server error'
+      message: 'User already exists'
     });
   }
-});
+
+  // Hash password
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  // Create user
+  const user = await prisma.user.create({
+    data: {
+      name,
+      email,
+      passwordHash
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true
+    }
+  });
+
+  // Generate tokens
+  const accessToken = generateAccessToken(user.id, user.email, user.role);
+  const refreshToken = generateRefreshToken(user.id);
+
+  // Store refresh token
+  await prisma.refreshToken.create({
+    data: {
+      token: refreshToken,
+      userId: user.id,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+    }
+  });
+
+  res.status(201).json({
+    success: true,
+    message: 'User registered successfully',
+    data: {
+      user,
+      accessToken,
+      refreshToken
+    }
+  });
+}));
 
 /**
  * @route   POST /api/v1/auth/login
  * @desc    Login user
  * @access  Public
  */
-router.post('/login', async (req, res): Promise<any> => {
-  try {
-    const { email, password } = loginSchema.parse(req.body);
+router.post('/login', asyncHandler(async (req, res) => {
+  const { email, password } = loginSchema.parse(req.body);
 
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
+  // Find user
+  const user = await prisma.user.findUnique({
+    where: { email }
+  });
 
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    }
-
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-
-    if (!isValidPassword) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    }
-
-    // Generate tokens
-    const accessToken = generateAccessToken(user.id, user.email, user.role);
-    const refreshToken = generateRefreshToken(user.id);
-
-    // Store refresh token
-    await prisma.refreshToken.create({
-      data: {
-        token: refreshToken,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      }
-    });
-
-    res.json({
-      success: true,
-      message: 'Login successful',
-      data: {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role
-        },
-        accessToken,
-        refreshToken
-      }
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation error',
-        errors: error.errors
-      });
-    }
-
-    res.status(500).json({
+  if (!user) {
+    return res.status(401).json({
       success: false,
-      message: 'Server error'
+      message: 'Invalid credentials'
     });
   }
-});
+
+  // Verify password
+  const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+
+  if (!isValidPassword) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid credentials'
+    });
+  }
+
+  // Generate tokens
+  const accessToken = generateAccessToken(user.id, user.email, user.role);
+  const refreshToken = generateRefreshToken(user.id);
+
+  // Store refresh token
+  await prisma.refreshToken.create({
+    data: {
+      token: refreshToken,
+      userId: user.id,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    }
+  });
+
+  res.json({
+    success: true,
+    message: 'Login successful',
+    data: {
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      accessToken,
+      refreshToken
+    }
+  });
+}));
 
 /**
  * @route   POST /api/v1/auth/refresh
  * @desc    Refresh access token
  * @access  Public
  */
-router.post('/refresh', async (req, res): Promise<any> => {
-  try {
-    const { refreshToken } = req.body;
+router.post('/refresh', asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
 
-    if (!refreshToken) {
-      return res.status(400).json({
-        success: false,
-        message: 'Refresh token required'
-      });
-    }
-
-    // Verify refresh token
-    jwt.verify(refreshToken, process.env.JWT_SECRET!) as { userId: string };
-
-    // Check if token exists in database
-    const storedToken = await prisma.refreshToken.findUnique({
-      where: { token: refreshToken },
-      include: { user: true }
-    });
-
-    if (!storedToken || storedToken.expiresAt < new Date()) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid or expired refresh token'
-      });
-    }
-
-    // Generate new access token
-    const accessToken = generateAccessToken(
-      storedToken.user.id,
-      storedToken.user.email,
-      storedToken.user.role
-    );
-
-    res.json({
-      success: true,
-      data: { accessToken }
-    });
-  } catch (error) {
-    res.status(401).json({
+  if (!refreshToken) {
+    return res.status(400).json({
       success: false,
-      message: 'Invalid refresh token'
+      message: 'Refresh token required'
     });
   }
-});
+
+  // Verify refresh token
+  jwt.verify(refreshToken, process.env.JWT_SECRET!) as { userId: string };
+
+  // Check if token exists in database
+  const storedToken = await prisma.refreshToken.findUnique({
+    where: { token: refreshToken },
+    include: { user: true }
+  });
+
+  if (!storedToken || storedToken.expiresAt < new Date()) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid or expired refresh token'
+    });
+  }
+
+  // Generate new access token
+  const accessToken = generateAccessToken(
+    storedToken.user.id,
+    storedToken.user.email,
+    storedToken.user.role
+  );
+
+  res.json({
+    success: true,
+    data: { accessToken }
+  });
+}));
 
 /**
  * @route   POST /api/v1/auth/logout
  * @desc    Logout user (invalidate refresh token)
  * @access  Private
  */
-router.post('/logout', authenticate, async (req, res) => {
-  try {
-    const { refreshToken } = req.body;
+router.post('/logout', authenticate, asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
 
-    if (refreshToken) {
-      await prisma.refreshToken.deleteMany({
-        where: {
-          token: refreshToken,
-          userId: req.user!.userId
-        }
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Logout successful'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
+  if (refreshToken) {
+    await prisma.refreshToken.deleteMany({
+      where: {
+        token: refreshToken,
+        userId: req.user!.userId
+      }
     });
   }
-});
+
+  res.json({
+    success: true,
+    message: 'Logout successful'
+  });
+}));
 
 /**
  * @route   POST /api/v1/auth/forgot-password
  * @desc    Request password reset token
  * @access  Public
  */
-router.post('/forgot-password', async (req, res): Promise<any> => {
-  try {
-    const { email } = forgotPasswordSchema.parse(req.body);
+router.post('/forgot-password', asyncHandler(async (req, res) => {
+  const { email } = forgotPasswordSchema.parse(req.body);
 
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
+  const user = await prisma.user.findUnique({
+    where: { email }
+  });
 
-    if (!user) {
-      return res.json({
-        success: true,
-        message: 'If the email exists, a password reset link has been sent'
-      });
-    }
-
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-
-    await prisma.passwordResetToken.create({
-      data: {
-        token: hashedToken,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000)
-      }
-    });
-
-    res.json({
+  if (!user) {
+    return res.json({
       success: true,
-      message: 'If the email exists, a password reset link has been sent',
-      data: {
-        resetToken
-      }
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation error',
-        errors: error.errors
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
+      message: 'If the email exists, a password reset link has been sent'
     });
   }
-});
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+  await prisma.passwordResetToken.create({
+    data: {
+      token: hashedToken,
+      userId: user.id,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+    }
+  });
+
+  res.json({
+    success: true,
+    message: 'If the email exists, a password reset link has been sent',
+    data: {
+      resetToken
+    }
+  });
+}));
 
 /**
  * @route   POST /api/v1/auth/reset-password
  * @desc    Reset password with token
  * @access  Public
  */
-router.post('/reset-password', async (req, res): Promise<any> => {
-  try {
-    const { token, newPassword } = resetPasswordSchema.parse(req.body);
+router.post('/reset-password', asyncHandler(async (req, res) => {
+  const { token, newPassword } = resetPasswordSchema.parse(req.body);
 
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
-    const resetToken = await prisma.passwordResetToken.findUnique({
-      where: { token: hashedToken },
-      include: { user: true }
-    });
+  const resetToken = await prisma.passwordResetToken.findUnique({
+    where: { token: hashedToken },
+    include: { user: true }
+  });
 
-    if (!resetToken || resetToken.expiresAt < new Date()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid or expired reset token'
-      });
-    }
-
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: resetToken.userId },
-        data: { passwordHash }
-      }),
-      prisma.passwordResetToken.delete({
-        where: { id: resetToken.id }
-      }),
-      prisma.refreshToken.deleteMany({
-        where: { userId: resetToken.userId }
-      })
-    ]);
-
-    res.json({
-      success: true,
-      message: 'Password reset successfully'
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation error',
-        errors: error.errors
-      });
-    }
-
-    res.status(500).json({
+  if (!resetToken || resetToken.expiresAt < new Date()) {
+    return res.status(400).json({
       success: false,
-      message: 'Server error'
+      message: 'Invalid or expired reset token'
     });
   }
-});
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: resetToken.userId },
+      data: { passwordHash }
+    }),
+    prisma.passwordResetToken.delete({
+      where: { id: resetToken.id }
+    }),
+    prisma.refreshToken.deleteMany({
+      where: { userId: resetToken.userId }
+    })
+  ]);
+
+  res.json({
+    success: true,
+    message: 'Password reset successfully'
+  });
+}));
 
 export default router;
