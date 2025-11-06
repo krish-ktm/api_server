@@ -125,10 +125,10 @@ app.use('/api/v1/admin', adminBatchRoutes);
 
 // ============= ERROR HANDLING =============
 
-import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { errorHandler } from './middleware/errorHandler';
 
 // 404 Handler - must be AFTER all routes
-app.use(notFoundHandler);
+app.use(errorHandler);
 
 // Global error handler - must be LAST
 app.use(errorHandler);

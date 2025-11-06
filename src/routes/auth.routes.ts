@@ -1,5 +1,6 @@
 // src/routes/auth.routes.ts
 
+import express from "express";
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
@@ -7,8 +8,9 @@ import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { authenticate } from '../middleware/auth';
+import { asyncHandler } from "../middleware/errorHandler";
 
-const router = Router();
+const router = express.Router();
 const prisma = new PrismaClient();
 
 // Validation schemas
@@ -132,74 +134,70 @@ router.post('/register', async (req, res): Promise<any> => {
  * @desc    Login user
  * @access  Public
  */
-router.post('/login', async (req, res): Promise<any> => {
-  try {
-    const { email, password } = loginSchema.parse(req.body);
+router.post(
+  "/login",
+  asyncHandler(async (req, res, next) => {
+    console.log("[auth/login] request body:", JSON.stringify(req.body));
+    try {
+      const { email, password } = loginSchema.parse(req.body);
 
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
+      // Find user
+      const user = await prisma.user.findUnique({
+        where: { email }
       });
-    }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-
-    if (!isValidPassword) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    }
-
-    // Generate tokens
-    const accessToken = generateAccessToken(user.id, user.email, user.role);
-    const refreshToken = generateRefreshToken(user.id);
-
-    // Store refresh token
-    await prisma.refreshToken.create({
-      data: {
-        token: refreshToken,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials'
+        });
       }
-    });
 
-    res.json({
-      success: true,
-      message: 'Login successful',
-      data: {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role
-        },
-        accessToken,
-        refreshToken
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+
+      if (!isValidPassword) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials'
+        });
       }
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation error',
-        errors: error.errors
-      });
-    }
 
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-});
+      // Generate tokens
+      const accessToken = generateAccessToken(user.id, user.email, user.role);
+      const refreshToken = generateRefreshToken(user.id);
+
+      // Store refresh token
+      await prisma.refreshToken.create({
+        data: {
+          token: refreshToken,
+          userId: user.id,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        }
+      });
+
+      res.json({
+        success: true,
+        message: 'Login successful',
+        data: {
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+          },
+          accessToken,
+          refreshToken
+        }
+      });
+    } catch (err) {
+      console.error("[auth/login] caught error:", err);
+      // attach extra info for error handler if helpful
+      (err as any).info = { route: "POST /api/v1/auth/login", body: req.body };
+      return next(err);
+    }
+  })
+);
 
 /**
  * @route   POST /api/v1/auth/refresh
