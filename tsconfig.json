@@ -16,7 +16,7 @@
     "sourceMap": true,
     "noUnusedLocals": false,
     "noImplicitAny":false,
-    "noUnusedParameters": true,
+    "noUnusedParameters": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
   },
