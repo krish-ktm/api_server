@@ -1,3 +1,6 @@
 {
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "editor.mouseWheelScrollSensitivity": 0.03,
+    "workbench.list.mouseWheelScrollSensitivity": 0.03,
+    "terminal.integrated.mouseWheelScrollSensitivity": 0.02
 }
