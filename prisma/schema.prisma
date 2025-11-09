@@ -114,6 +114,7 @@ model QnA {
   topicId      String          @map("topic_id")
   question     String          @db.Text
   answer       String          @db.Text
+  exampleCode  String?         @db.Text @map("example_code")
   level        DifficultyLevel @default(BEGINNER)
   companyTags  Json?           @map("company_tags") // ["Amazon", "Google"]
   createdAt    DateTime        @default(now()) @map("created_at")

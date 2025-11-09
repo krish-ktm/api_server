@@ -225,7 +225,7 @@ Below is a high-level look at the relational model (Prisma schema). Use this to 
 | **User** | `users` | `id` (UUID) | `name`, `email`, `role`, timestamps | 1-N `bookmarks`, `progress`, `quiz_attempts`, `refresh_tokens`; M-N `products` via `user_products` |
 | **Product** | `products` | `id` | `name`, `slug`, `description`, `is_active` | 1-N **topics**; M-N **users** via `user_products` |
 | **Topic** | `topics` | `id` | `product_id`, `name`, `order` | Belongs to **product**; 1-N **qna**, **quizzes**, **pdfs**, **progress** |
-| **QnA** | `qna` | `id` | `topic_id`, `question`, `answer`, `level`, `company_tags` | Belongs to **topic**; 1-N **bookmarks** |
+| **QnA** | `qna` | `id` | `topic_id`, `question`, `answer`, `example_code`, `level`, `company_tags` | Belongs to **topic**; 1-N **bookmarks** |
 | **Quiz** | `quizzes` | `id` | `topic_id`, `question`, `options[]`, `correct_answer`, `level`, `company_tags` | Belongs to **topic**; 1-N **quiz_attempts** |
 | **PDF** | `pdfs` | `id` | `topic_id`, `title`, `file_url`, `file_size` | Belongs to **topic**; 1-N **bookmarks** |
 | **Bookmark** | `bookmarks` | `id` | `user_id`, `qna_id?`, `pdf_id?` | Belongs to **user** and either **qna** or **pdf** |

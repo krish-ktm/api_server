@@ -21,6 +21,7 @@ const batchQnaCreateSchema = z.object({
     topicId: z.string().uuid(),
     question: z.string().min(1),
     answer: z.string().min(1),
+    exampleCode: z.string().optional(),
     level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']).optional(),
     companyTags: z.array(z.string()).optional()
   })).min(1)
@@ -31,6 +32,7 @@ const batchQnaUpdateSchema = z.object({
     id: z.string().uuid(),
     question: z.string().min(1).optional(),
     answer: z.string().min(1).optional(),
+    exampleCode: z.string().optional(),
     level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']).optional(),
     companyTags: z.array(z.string()).optional()
   })).min(1)
