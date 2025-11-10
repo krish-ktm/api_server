@@ -1,0 +1,199 @@
+{
+  "variable": [
+    {
+      "key": "quizGroupId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Get Quiz Groups",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/products/{{productId}}/quiz-groups",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "products", "{{productId}}", "quiz-groups"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Quiz groups retrieved', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    if (jsonData.data.length > 0) {",
+              "        pm.collectionVariables.set('quizGroupId', jsonData.data[0].id);",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Single Quiz Group",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/products/{{productId}}/quiz-groups/{{quizGroupId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "products", "{{productId}}", "quiz-groups", "{{quizGroupId}}"]
+        },
+        "description": "Get single quiz group with quiz counts"
+      }
+    },
+    {
+      "name": "Admin - Quiz Groups",
+      "item": [
+        {
+          "name": "Get All Quiz Groups",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/quiz-groups",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "quiz-groups"]
+            }
+          }
+        },
+        {
+          "name": "Get Single Quiz Group",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/quiz-groups/{{quizGroupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "quiz-groups", "{{quizGroupId}}"]
+            },
+            "description": "Get single quiz group with product info and quiz counts"
+          }
+        },
+        {
+          "name": "Create Quiz Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"name\": \"JavaScript Quizzes\",\n  \"description\": \"Test your JavaScript knowledge\",\n  \"order\": 1,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/quiz-groups",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "quiz-groups"]
+            }
+          }
+        },
+        {
+          "name": "Update Quiz Group",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated JavaScript Quizzes\",\n  \"order\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/quiz-groups/{{quizGroupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "quiz-groups", "{{quizGroupId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Quiz Group",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/quiz-groups/{{quizGroupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "quiz-groups", "{{quizGroupId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Quiz (Updated)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quizGroupId\": \"{{quizGroupId}}\",\n  \"question\": \"What is the time complexity of binary search?\",\n  \"options\": [\"O(n)\", \"O(log n)\", \"O(n^2)\", \"O(1)\"],\n  \"correctAnswer\": \"O(log n)\",\n  \"explanation\": \"Binary search divides the search space in half each iteration.\",\n  \"level\": \"INTERMEDIATE\",\n  \"companyTags\": [\"Amazon\", \"Facebook\"]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/quizzes",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "admin", "quizzes"]
+        }
+      }
+    },
+    {
+      "name": "Batch Create Quizzes (Updated)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"quizGroupId\": \"{{quizGroupId}}\",\n      \"question\": \"What is Big O notation?\",\n      \"options\": [\"Time complexity measure\", \"Space complexity measure\", \"Both\", \"Neither\"],\n      \"correctAnswer\": \"Both\",\n      \"explanation\": \"Big O notation describes both time and space complexity.\",\n      \"level\": \"BEGINNER\",\n      \"companyTags\": [\"Amazon\", \"Google\"]\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/batch/quizzes",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "admin", "batch", "quizzes"]
+        }
+      }
+    },
+    {
+      "name": "Batch Create Quiz Groups",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"name\": \"JavaScript Basics Quizzes\",\n      \"description\": \"Test your JavaScript basics knowledge\",\n      \"order\": 1,\n      \"isActive\": true\n    },\n    {\n      \"productId\": \"{{productId}}\",\n      \"name\": \"Advanced JavaScript Quizzes\",\n      \"description\": \"Test your advanced JavaScript knowledge\",\n      \"order\": 2,\n      \"isActive\": true\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/admin/batch/quiz-groups",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "admin", "batch", "quiz-groups"]
+        }
+      }
+    }
+  ]
+}

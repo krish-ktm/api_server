@@ -41,8 +41,16 @@ const qnaSchema = z.object({
   companyTags: z.array(z.string()).optional()
 });
 
+const quizGroupSchema = z.object({
+  productId: z.string().uuid(),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  order: z.number().int().optional(),
+  isActive: z.boolean().optional()
+});
+
 const quizSchema = z.object({
-  topicId: z.string().uuid(),
+  quizGroupId: z.string().uuid(),
   question: z.string().min(1),
   options: z.array(z.string()).min(2),
   correctAnswer: z.string().min(1),
@@ -555,7 +563,6 @@ router.get('/topics/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): 
         _count: {
           select: {
             qna: true,
-            quizzes: true,
             pdfs: true
           }
         }
@@ -871,6 +878,171 @@ router.delete('/qna/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res) =
   }
 });
 
+// ============= QUIZ GROUPS (Admin+) =============
+
+/**
+ * @route   GET /api/v1/admin/quiz-groups/:id
+ * @desc    Get single quiz group details
+ * @access  Admin, Master Admin
+ */
+router.get('/quiz-groups/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<any> => {
+  try {
+    const { id } = req.params;
+
+    const quizGroup = await prisma.quizGroup.findUnique({
+      where: { id },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
+        _count: {
+          select: {
+            quizzes: true
+          }
+        }
+      }
+    });
+
+    if (!quizGroup) {
+      return res.status(404).json({
+        success: false,
+        message: 'Quiz group not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: quizGroup
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+/**
+ * @route   GET /api/v1/admin/quiz-groups
+ * @desc    Get all quiz groups (optionally filtered by product)
+ * @access  Admin, Master Admin
+ */
+router.get('/quiz-groups', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<void> => {
+  try {
+    const { productId } = req.query;
+
+    const quizGroups = await prisma.quizGroup.findMany({
+      where: productId ? { productId: productId as string } : undefined,
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        _count: {
+          select: {
+            quizzes: true
+          }
+        }
+      },
+      orderBy: { order: 'asc' }
+    });
+
+    res.json({
+      success: true,
+      data: quizGroups
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+/**
+ * @route   POST /api/v1/admin/quiz-groups
+ * @desc    Create a new quiz group
+ * @access  Admin, Master Admin
+ */
+router.post('/quiz-groups', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<any> => {
+  try {
+    const data = quizGroupSchema.parse(req.body);
+
+    const quizGroup = await prisma.quizGroup.create({
+      data
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Quiz group created successfully',
+      data: quizGroup
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: error.errors
+      });
+    }
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+/**
+ * @route   PUT /api/v1/admin/quiz-groups/:id
+ * @desc    Update a quiz group
+ * @access  Admin, Master Admin
+ */
+router.put('/quiz-groups/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<any> => {
+  try {
+    const { id } = req.params;
+    const data = quizGroupSchema.partial().parse(req.body);
+
+    const quizGroup = await prisma.quizGroup.update({
+      where: { id },
+      data
+    });
+
+    res.json({
+      success: true,
+      message: 'Quiz group updated successfully',
+      data: quizGroup
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: error.errors
+      });
+    }
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+/**
+ * @route   DELETE /api/v1/admin/quiz-groups/:id
+ * @desc    Delete a quiz group
+ * @access  Admin, Master Admin
+ */
+router.delete('/quiz-groups/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.quizGroup.delete({
+      where: { id }
+    });
+
+    res.json({
+      success: true,
+      message: 'Quiz group deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // ============= QUIZZES (Admin+) =============
 
 /**
@@ -885,7 +1057,7 @@ router.get('/quizzes/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res):
     const quiz = await prisma.quiz.findUnique({
       where: { id },
       include: {
-        topic: {
+        quizGroup: {
           select: {
             id: true,
             name: true,
@@ -928,12 +1100,20 @@ router.get('/quizzes/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res):
  */
 router.get('/quizzes', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<void> => {
   try {
-    const { topicId } = req.query;
+    const { quizGroupId, productId } = req.query;
+    
+    const whereClause: any = {};
+    
+    if (quizGroupId) {
+      whereClause.quizGroupId = quizGroupId as string;
+    } else if (productId) {
+      whereClause.quizGroup = { productId: productId as string };
+    }
 
     const quizzes = await prisma.quiz.findMany({
-      where: topicId ? { topicId: topicId as string } : undefined,
+      where: whereClause,
       include: {
-        topic: {
+        quizGroup: {
           select: {
             id: true,
             name: true,

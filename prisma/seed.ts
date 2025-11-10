@@ -109,11 +109,34 @@ async function main() {
 
   console.log('✅ Sample Q&A created');
 
+  // Create Sample Quiz Groups
+  const jsQuizGroup = await prisma.quizGroup.create({
+    data: {
+      productId: interviewPrep.id,
+      name: 'JavaScript Quizzes',
+      description: 'Test your JavaScript knowledge with these quizzes',
+      order: 1,
+      isActive: true
+    }
+  });
+
+  const dsQuizGroup = await prisma.quizGroup.create({
+    data: {
+      productId: interviewPrep.id,
+      name: 'Data Structures Quizzes',
+      description: 'Test your Data Structures knowledge with these quizzes',
+      order: 2,
+      isActive: true
+    }
+  });
+
+  console.log('✅ Sample quiz groups created');
+
   // Create Sample Quizzes
   await prisma.quiz.createMany({
     data: [
       {
-        topicId: jsTopic.id,
+        quizGroupId: jsQuizGroup.id,
         question: 'Which of the following is NOT a primitive data type in JavaScript?',
         options: ['String', 'Number', 'Array', 'Boolean'],
         correctAnswer: 'Array',
@@ -122,7 +145,7 @@ async function main() {
         companyTags: ['amazon', 'flipkart']
       },
       {
-        topicId: jsTopic.id,
+        quizGroupId: jsQuizGroup.id,
         question: 'What will be the output of: console.log(typeof null)?',
         options: ['null', 'undefined', 'object', 'number'],
         correctAnswer: 'object',
@@ -131,7 +154,7 @@ async function main() {
         companyTags: ['google', 'microsoft']
       },
       {
-        topicId: dsTopic.id,
+        quizGroupId: dsQuizGroup.id,
         question: 'Which data structure uses LIFO (Last In First Out)?',
         options: ['Queue', 'Stack', 'Array', 'Tree'],
         correctAnswer: 'Stack',

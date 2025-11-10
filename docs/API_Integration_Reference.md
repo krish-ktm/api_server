@@ -112,7 +112,9 @@ Most product routes require that the authenticated user **has been granted acces
 | GET | `/products/:productId/topics` | Topics for a product |
 | GET | `/products/:productId/qna` | Filterable Q-and-A list |
 | GET | `/products/:productId/qna/:qnaId` | Q-and-A detail |
-| GET | `/products/:productId/quizzes` | Filterable quizzes |
+| GET | `/products/:productId/quiz-groups` | Quiz groups for a product |
+| GET | `/products/:productId/quiz-groups/:quizGroupId` | Quiz group detail |
+| GET | `/products/:productId/quizzes` | Filterable quizzes (by quiz group) |
 | GET | `/products/:productId/quizzes/:quizId` | Quiz detail |
 | POST | `/products/:productId/quizzes/:quizId/submit` | Submit answer |
 | GET | `/products/:productId/pdfs` | PDFs list |
@@ -177,6 +179,15 @@ Requires `role === ADMIN` or `MASTER_ADMIN` depending on section. Supply the **a
 | PUT | `/admin/topics/:id` | Update topic |
 | DELETE | `/admin/topics/:id` | Delete topic |
 
+### Quiz Group CRUD (Admin+)
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/admin/quiz-groups` | List quiz groups (filterable) |
+| GET | `/admin/quiz-groups/:id` | Quiz group detail |
+| POST | `/admin/quiz-groups` | Create quiz group |
+| PUT | `/admin/quiz-groups/:id` | Update quiz group |
+| DELETE | `/admin/quiz-groups/:id` | Delete quiz group |
+
 ### Q&A / Quiz / PDF Admin routes
 Refer to route names; pattern mirrors `GET /admin/qna`, `/admin/quizzes`, `/admin/pdfs` etc. Each supports full CRUD.
 
@@ -224,9 +235,10 @@ Below is a high-level look at the relational model (Prisma schema). Use this to 
 | ------ | ---------- | ----------- | -------------- | ------------- |
 | **User** | `users` | `id` (UUID) | `name`, `email`, `role`, timestamps | 1-N `bookmarks`, `progress`, `quiz_attempts`, `refresh_tokens`; M-N `products` via `user_products` |
 | **Product** | `products` | `id` | `name`, `slug`, `description`, `is_active` | 1-N **topics**; M-N **users** via `user_products` |
-| **Topic** | `topics` | `id` | `product_id`, `name`, `order` | Belongs to **product**; 1-N **qna**, **quizzes**, **pdfs**, **progress** |
+| **Topic** | `topics` | `id` | `product_id`, `name`, `order` | Belongs to **product**; 1-N **qna**, **pdfs**, **progress** |
 | **QnA** | `qna` | `id` | `topic_id`, `question`, `answer`, `example_code`, `level`, `company_tags` | Belongs to **topic**; 1-N **bookmarks** |
-| **Quiz** | `quizzes` | `id` | `topic_id`, `question`, `options[]`, `correct_answer`, `level`, `company_tags` | Belongs to **topic**; 1-N **quiz_attempts** |
+| **QuizGroup** | `quiz_groups` | `id` | `product_id`, `name`, `description`, `order`, `is_active` | Belongs to **product**; 1-N **quizzes** |
+| **Quiz** | `quizzes` | `id` | `quiz_group_id`, `question`, `options[]`, `correct_answer`, `level`, `company_tags` | Belongs to **quiz_group**; 1-N **quiz_attempts** |
 | **PDF** | `pdfs` | `id` | `topic_id`, `title`, `file_url`, `file_size` | Belongs to **topic**; 1-N **bookmarks** |
 | **Bookmark** | `bookmarks` | `id` | `user_id`, `qna_id?`, `pdf_id?` | Belongs to **user** and either **qna** or **pdf** |
 | **Progress** | `progress` | `id` | `user_id`, `topic_id`, `completion_percent`, `score` | Belongs to **user** & **topic** |
@@ -247,8 +259,8 @@ User--<QuizAttempt
 User--<RefreshToken
 User--<PasswordResetToken
 User--<UserProduct>--Product--<Topic--<QnA
-                                 |--<Quiz--<QuizAttempt
                                  |--<PDF
+                                 |--<QuizGroup--<Quiz--<QuizAttempt
 ```
 
 ---

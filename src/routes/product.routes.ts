@@ -84,7 +84,6 @@ router.get('/:productId/topics', authenticate, asyncHandler(async (req: Request,
           _count: {
             select: {
               qna: true,
-              quizzes: true,
               pdfs: true
             }
           }
@@ -119,7 +118,6 @@ router.get('/:productId/topics', authenticate, asyncHandler(async (req: Request,
       _count: {
         select: {
           qna: true,
-          quizzes: true,
           pdfs: true
         }
       }
@@ -284,6 +282,107 @@ router.get('/:productId/qna', authenticate, asyncHandler(async (req: Request, re
 }));
 
 /**
+ * @route   GET /api/v1/products/:productId/quiz-groups
+ * @desc    Get all quiz groups for a product
+ * @access  Private
+ */
+router.get('/:productId/quiz-groups', authenticate, asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  const { productId } = req.params;
+  const userId = req.user!.userId;
+  const userRole = req.user!.role;
+
+  if (userRole !== Role.ADMIN && userRole !== Role.MASTER_ADMIN) {
+    const hasAccess = await prisma.userProduct.findUnique({
+      where: { userId_productId: { userId, productId } }
+    });
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access to this product is denied'
+      });
+    }
+  }
+
+  const quizGroups = await prisma.quizGroup.findMany({
+    where: { productId },
+    include: {
+      _count: {
+        select: {
+          quizzes: true
+        }
+      }
+    },
+    orderBy: { order: 'asc' }
+  });
+
+  res.json({
+    success: true,
+    data: quizGroups
+  });
+}));
+
+/**
+ * @route   GET /api/v1/products/:productId/quiz-groups/:quizGroupId
+ * @desc    Get single quiz group details
+ * @access  Private
+ */
+router.get('/:productId/quiz-groups/:quizGroupId', authenticate, asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  const { productId, quizGroupId } = req.params;
+  const userId = req.user!.userId;
+  const userRole = req.user!.role;
+
+  if (userRole !== Role.ADMIN && userRole !== Role.MASTER_ADMIN) {
+    const hasAccess = await prisma.userProduct.findUnique({
+      where: { userId_productId: { userId, productId } }
+    });
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access to this product is denied'
+      });
+    }
+  }
+
+  const quizGroup = await prisma.quizGroup.findUnique({
+    where: { id: quizGroupId },
+    include: {
+      product: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      _count: {
+        select: {
+          quizzes: true
+        }
+      }
+    }
+  });
+
+  if (!quizGroup) {
+    return res.status(404).json({
+      success: false,
+      message: 'Quiz group not found'
+    });
+  }
+
+  if (quizGroup.product.id !== productId) {
+    return res.status(400).json({
+      success: false,
+      message: 'Quiz group does not belong to this product'
+    });
+  }
+
+  res.json({
+    success: true,
+    data: quizGroup
+  });
+}));
+
+/**
  * @route   GET /api/v1/products/:productId/quizzes/:quizId
  * @desc    Get single quiz details (without correct answer until submitted)
  * @access  Private
@@ -309,7 +408,7 @@ router.get('/:productId/quizzes/:quizId', authenticate, asyncHandler(async (req:
   const quiz = await prisma.quiz.findUnique({
     where: { id: quizId },
     include: {
-      topic: {
+      quizGroup: {
         select: {
           id: true,
           name: true,
@@ -332,7 +431,7 @@ router.get('/:productId/quizzes/:quizId', authenticate, asyncHandler(async (req:
     });
   }
 
-  if (quiz.topic.productId !== productId) {
+  if (quiz.quizGroup.productId !== productId) {
     return res.status(400).json({
       success: false,
       message: 'Quiz does not belong to this product'
@@ -379,7 +478,7 @@ router.get('/:productId/quizzes', authenticate, asyncHandler(async (req: Request
   const userId = req.user!.userId;
   const userRole = req.user!.role;
 
-  const { company, topic, level } = req.query;
+  const { company, quizGroup, level } = req.query;
 
   if (userRole !== Role.ADMIN && userRole !== Role.MASTER_ADMIN) {
     const hasAccess = await prisma.userProduct.findUnique({
@@ -395,11 +494,11 @@ router.get('/:productId/quizzes', authenticate, asyncHandler(async (req: Request
   }
 
   const whereClause: any = {
-    topic: { productId }
+    quizGroup: { productId }
   };
 
-  if (topic) {
-    whereClause.topicId = topic as string;
+  if (quizGroup) {
+    whereClause.quizGroupId = quizGroup as string;
   }
 
   if (level) {
@@ -416,7 +515,7 @@ router.get('/:productId/quizzes', authenticate, asyncHandler(async (req: Request
   const quizzes = await prisma.quiz.findMany({
     where: whereClause,
     include: {
-      topic: {
+      quizGroup: {
         select: {
           id: true,
           name: true
@@ -486,7 +585,7 @@ router.post('/:productId/quizzes/:quizId/submit', authenticate, asyncHandler(asy
   const quiz = await prisma.quiz.findUnique({
     where: { id: quizId },
     include: {
-      topic: {
+      quizGroup: {
         select: {
           productId: true
         }
@@ -501,7 +600,7 @@ router.post('/:productId/quizzes/:quizId/submit', authenticate, asyncHandler(asy
     });
   }
 
-  if (quiz.topic.productId !== productId) {
+  if (quiz.quizGroup.productId !== productId) {
     return res.status(400).json({
       success: false,
       message: 'Quiz does not belong to this product'

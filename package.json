@@ -12,7 +12,11 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "migrate:quizzes": "tsx scripts/migrate-quizzes.ts",
+    "migrate:sql": "tsx scripts/execute-sql-migration.ts",
+    "db:push:schema": "prisma db push --accept-data-loss",
+    "create:quiz-groups": "tsx scripts/create-quiz-groups.ts"
   },
   "keywords": [
     "api",
