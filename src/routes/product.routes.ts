@@ -314,12 +314,7 @@ router.get('/:productId/quizzes/:quizId', authenticate, asyncHandler(async (req:
           id: true,
           name: true,
           productId: true,
-          product: {
-            select: {
-              id: true,
-              name: true
-            }
-          }
+          product: { select: { id: true, name: true } }
         }
       }
     }
@@ -332,7 +327,7 @@ router.get('/:productId/quizzes/:quizId', authenticate, asyncHandler(async (req:
     });
   }
 
-  if (quiz.topic.productId !== productId) {
+  if ((quiz as any).productId !== productId) {
     return res.status(400).json({
       success: false,
       message: 'Quiz does not belong to this product'
@@ -486,11 +481,7 @@ router.post('/:productId/quizzes/:quizId/submit', authenticate, asyncHandler(asy
   const quiz = await prisma.quiz.findUnique({
     where: { id: quizId },
     include: {
-      topic: {
-        select: {
-          productId: true
-        }
-      }
+      topic: { select: { productId: true } }
     }
   });
 
@@ -501,7 +492,7 @@ router.post('/:productId/quizzes/:quizId/submit', authenticate, asyncHandler(asy
     });
   }
 
-  if (quiz.topic.productId !== productId) {
+  if ((quiz as any).productId !== productId) {
     return res.status(400).json({
       success: false,
       message: 'Quiz does not belong to this product'

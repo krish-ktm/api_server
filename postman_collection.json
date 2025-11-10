@@ -413,7 +413,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"topicId\": \"{{topicId}}\",\n  \"completionPercent\": 75,\n  \"score\": 85.5\n}"
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"topicId\": \"{{topicId}}\",\n  \"completionPercent\": 75,\n  \"score\": 85.5\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/users/progress",
@@ -1118,7 +1118,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"topicId\": \"{{topicId}}\",\n  \"question\": \"What is a binary tree?\",\n  \"answer\": \"A binary tree is a tree data structure where each node has at most two children.\",\n  \"level\": \"BEGINNER\",\n  \"companyTags\": [\"Amazon\", \"Google\", \"Microsoft\"]\n}"
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"topicId\": \"{{topicId}}\",\n  \"question\": \"What is a binary tree?\",\n  \"answer\": \"A binary tree is a tree data structure where each node has at most two children.\",\n  \"level\": \"BEGINNER\",\n  \"companyTags\": [\"Amazon\", \"Google\", \"Microsoft\"]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/admin/qna",
@@ -1202,7 +1202,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"topicId\": \"{{topicId}}\",\n  \"question\": \"What is the time complexity of binary search?\",\n  \"options\": [\"O(n)\", \"O(log n)\", \"O(n^2)\", \"O(1)\"],\n  \"correctAnswer\": \"O(log n)\",\n  \"explanation\": \"Binary search divides the search space in half each iteration.\",\n  \"level\": \"INTERMEDIATE\",\n  \"companyTags\": [\"Amazon\", \"Facebook\"]\n}"
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"topicId\": \"{{topicId}}\",\n  \"question\": \"What is the time complexity of binary search?\",\n  \"options\": [\"O(n)\", \"O(log n)\", \"O(n^2)\", \"O(1)\"],\n  \"correctAnswer\": \"O(log n)\",\n  \"explanation\": \"Binary search divides the search space in half each iteration.\",\n  \"level\": \"INTERMEDIATE\",\n  \"companyTags\": [\"Amazon\", \"Facebook\"]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/admin/quizzes",
@@ -1286,7 +1286,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"topicId\": \"{{topicId}}\",\n  \"title\": \"Data Structures Cheat Sheet\",\n  \"description\": \"Complete reference for all data structures\",\n  \"fileUrl\": \"https://example.com/pdfs/ds-cheatsheet.pdf\",\n  \"fileSize\": 2048000\n}"
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"topicId\": \"{{topicId}}\",\n  \"title\": \"Data Structures Cheat Sheet\",\n  \"description\": \"Complete reference for all data structures\",\n  \"fileUrl\": \"https://example.com/pdfs/ds-cheatsheet.pdf\",\n  \"fileSize\": 2048000\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/admin/pdfs",

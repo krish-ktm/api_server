@@ -86,6 +86,7 @@ model Product {
   updatedAt   DateTime @updatedAt @map("updated_at")
   
   topics      Topic[]
+  quizzes     Quiz[]
   userAccess  UserProduct[]
 
   @@map("products")
@@ -129,7 +130,8 @@ model QnA {
 
 model Quiz {
   id            String          @id @default(uuid())
-  topicId       String          @map("topic_id")
+  productId     String          @map("product_id")
+  topicId       String?         @map("topic_id")
   question      String          @db.Text
   options       Json            // ["Option A", "Option B", "Option C", "Option D"]
   correctAnswer String          @map("correct_answer")
@@ -139,9 +141,11 @@ model Quiz {
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
   
-  topic         Topic           @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  product       Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  topic         Topic?          @relation(fields: [topicId], references: [id], onDelete: Cascade)
   attempts      QuizAttempt[]
 
+  @@index([productId])
   @@index([topicId])
   @@map("quizzes")
 }
