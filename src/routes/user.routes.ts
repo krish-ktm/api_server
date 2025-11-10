@@ -366,7 +366,9 @@ router.get('/quiz-attempts', authenticate, async (req, res) => {
       };
     } else if (productId) {
       whereClause.quiz = {
-        productId: productId as string
+        topic: {
+          productId: productId as string
+        }
       };
     }
 

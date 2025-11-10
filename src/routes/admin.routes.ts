@@ -42,8 +42,7 @@ const qnaSchema = z.object({
 });
 
 const quizSchema = z.object({
-  productId: z.string().uuid(),
-  topicId: z.string().uuid().optional(),
+  topicId: z.string().uuid(),
   question: z.string().min(1),
   options: z.array(z.string()).min(2),
   correctAnswer: z.string().min(1),
@@ -971,15 +970,10 @@ router.get('/quizzes', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Pro
  */
 router.post('/quizzes', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<any> => {
   try {
-    const payload = quizSchema.parse(req.body);
-    const { productId, topicId, ...rest } = payload;
+    const data = quizSchema.parse(req.body);
 
     const quiz = await prisma.quiz.create({
-      data: {
-        productId,
-        ...(topicId ? { topicId } : {}),
-        ...rest
-      }
+      data
     });
 
     res.status(201).json({
@@ -1007,16 +1001,11 @@ router.post('/quizzes', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Pr
 router.put('/quizzes/:id', authorize('ADMIN', 'MASTER_ADMIN'), async (req, res): Promise<any> => {
   try {
     const { id } = req.params;
-    const payload = quizSchema.partial().parse(req.body);
-    const { productId, topicId, ...rest } = payload;
+    const data = quizSchema.partial().parse(req.body);
 
     const quiz = await prisma.quiz.update({
       where: { id },
-      data: {
-        ...(productId !== undefined ? { productId } : {}),
-        ...(topicId !== undefined ? { topicId } : {}),
-        ...rest
-      }
+      data
     });
 
     res.json({
